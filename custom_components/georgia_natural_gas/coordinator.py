@@ -1,4 +1,3 @@
-
 """Data coordinator for Georgia Natural Gas."""
 
 import calendar
@@ -12,7 +11,6 @@ from homeassistant.exceptions import (
     ConfigEntryNotReady,
     HomeAssistantError,
 )
-
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
