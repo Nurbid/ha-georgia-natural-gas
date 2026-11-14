@@ -81,41 +81,61 @@ def parse_billing_csv(csv_data: str) -> list[BillingRecord]:
         if None in row:
             raise ValueError(f"Billing export row {row_number} has extra columns.")
 
-        def value(field: str) -> str:
-            raw_value = row.get(field)
+        def value(
+            field: str,
+            *,
+            _row=row,
+            _row_number=row_number,
+        ) -> str:
+            raw_value = _row.get(field)
             if not isinstance(raw_value, str) or not raw_value.strip():
                 raise ValueError(
-                    f"Billing export row {row_number} has an empty {field} value."
+                    f"Billing export row {_row_number} has an empty {field} value."
                 )
             return raw_value.strip()
 
-        def as_date(field: str) -> date:
+        def as_date(
+            field: str,
+            *,
+            _value=value,
+            _row_number=row_number,
+        ) -> date:
             try:
-                return date.fromisoformat(value(field).replace("/", "-"))
+                return date.fromisoformat(_value(field).replace("/", "-"))
             except ValueError:
                 raise ValueError(
-                    f"Billing export row {row_number} has an invalid {field} date."
+                    f"Billing export row {_row_number} has an invalid {field} date."
                 ) from None
 
-        def as_decimal(field: str) -> Decimal:
+        def as_decimal(
+            field: str,
+            *,
+            _value=value,
+            _row_number=row_number,
+        ) -> Decimal:
             try:
-                result = Decimal(value(field))
+                result = Decimal(_value(field))
             except InvalidOperation:
                 raise ValueError(
-                    f"Billing export row {row_number} has an invalid {field} value."
+                    f"Billing export row {_row_number} has an invalid {field} value."
                 ) from None
             if not result.is_finite():
                 raise ValueError(
-                    f"Billing export row {row_number} has a non-finite {field} value."
+                    f"Billing export row {_row_number} has a non-finite {field} value."
                 )
             return result
 
-        def as_integer(field: str) -> int:
+        def as_integer(
+            field: str,
+            *,
+            _value=value,
+            _row_number=row_number,
+        ) -> int:
             try:
-                return int(value(field))
+                return int(_value(field))
             except ValueError:
                 raise ValueError(
-                    f"Billing export row {row_number} has an invalid {field} value."
+                    f"Billing export row {_row_number} has an invalid {field} value."
                 ) from None
 
         records.append(
