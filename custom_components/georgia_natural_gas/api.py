@@ -1,3 +1,4 @@
+"""Async client for the Georgia Natural Gas customer portal."""
 
 import json
 import logging
