@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Georgia Natural Gas",
+        "description": "Enter your Georgia Natural Gas customer portal credentials.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "Your Georgia Natural Gas customer portal username.",
+          "password": "Your Georgia Natural Gas customer portal password."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate with Georgia Natural Gas",
+        "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
+        "data": {
+          "password": "Password"
+        },
+        "data_description": {
+          "password": "Your current Georgia Natural Gas customer portal password."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Authentication failed. Check your password.",
+      "cannot_connect": "Unable to connect to Georgia Natural Gas.",
+      "unknown": "An unexpected error occurred. Check the Home Assistant logs."
+    }
+  }
+}
