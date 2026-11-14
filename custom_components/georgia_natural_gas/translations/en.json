@@ -1,4 +1,3 @@
-
 {
   "config": {
     "step": {
@@ -8,6 +7,10 @@
         "data": {
           "username": "Username",
           "password": "Password"
+        },
+        "data_description": {
+          "username": "Your Georgia Natural Gas customer portal username.",
+          "password": "Your Georgia Natural Gas customer portal password."
         }
       },
       "reauth_confirm": {
@@ -15,6 +18,9 @@
         "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
         "data": {
           "password": "Password"
+        },
+        "data_description": {
+          "password": "Your current Georgia Natural Gas customer portal password."
         }
       }
     },

@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -61,7 +60,7 @@ class GeorgiaNaturalGasConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             else:
                 return self.async_create_entry(
-                    title=username,
+                    title="Georgia Natural Gas",
                     data={
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,

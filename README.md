@@ -2,6 +2,8 @@
 
 A custom [Home Assistant](https://www.home-assistant.io/) integration for **Georgia Natural Gas (GNG)**. It retrieves billing history from the GNG customer portal and exposes the latest billing and natural-gas usage figures as Home Assistant sensors.
 
+**Requirements:** Home Assistant Core 2026.11.0 or newer.
+
 This is an unofficial, community-maintained integration. It is not affiliated with or endorsed by Georgia Natural Gas.
 
 ## Features

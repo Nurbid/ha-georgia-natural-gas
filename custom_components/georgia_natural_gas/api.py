@@ -1,11 +1,11 @@
+"""Async client for the Georgia Natural Gas customer portal."""
 
 import json
 import logging
 from html.parser import HTMLParser
 from urllib.parse import urljoin
-import aiohttp
-import asyncio
 
+import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class GeorgiaNaturalGasClient:
 
                 html = await response.text()
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG login page request timed out.") from None
 
         except aiohttp.ClientError as err:
@@ -187,7 +187,7 @@ class GeorgiaNaturalGasClient:
                         "GNG returned an invalid broker response."
                     ) from None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG request timed out.") from None
 
         except aiohttp.ClientError as err:
@@ -208,10 +208,9 @@ class GeorgiaNaturalGasClient:
             raise GNGAuthenticationError("GNG session expired.")
 
         if not result.get("Validated", False):
-            raise GNGError(
-                "GNG request validation failed: "
-                f"{result.get('ValidationErrors') or 'Unknown error'}"
-            )
+            # Avoid logging raw portal validation details, which may contain
+            # account-specific information.
+            raise GNGError("GNG request validation failed.")
 
         return result
 
@@ -295,7 +294,7 @@ class GeorgiaNaturalGasClient:
                         "GNG returned CSV data with an invalid text encoding."
                     ) from None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG CSV download timed out.") from None
 
         except aiohttp.ClientError as err:
@@ -358,12 +357,12 @@ def validate_billing_records(records):
         if previous_end is not None:
             if record.bill_from_date > previous_end:
                 issues.append(
-                    f"Gap in account {account}: "
+                    f"Gap in billing periods: "
                     f"{previous_end} to {record.bill_from_date}"
                 )
             elif record.bill_from_date < previous_end:
                 issues.append(
-                    f"Overlapping periods in account {account}: "
+                    f"Overlapping billing periods: "
                     f"previous ends {previous_end}, "
                     f"next starts {record.bill_from_date}"
                 )

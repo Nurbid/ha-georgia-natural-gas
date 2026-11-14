@@ -1,4 +1,3 @@
-
 """Data coordinator for Georgia Natural Gas."""
 
 import calendar
@@ -7,13 +6,11 @@ import logging
 from datetime import UTC
 
 import aiohttp
-
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
     HomeAssistantError,
 )
-
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -99,12 +96,12 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
 
         try:
             if not isinstance(stored, dict):
-                raise ValueError("Stored data is not a dictionary.")
+                raise TypeError("Stored data is not a dictionary.")
 
             records = stored.get("records")
 
             if not isinstance(records, list):
-                raise ValueError("Stored records are not a list.")
+                raise TypeError("Stored records are not a list.")
 
             self.records = [
                 deserialize_billing_record(record)

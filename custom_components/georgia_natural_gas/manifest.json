@@ -1,12 +1,16 @@
 {
-    "domain": "georgia_natural_gas",
-    "name": "Georgia Natural Gas",
-    "codeowners": ["@Nurbid"],
-    "documentation": "https://github.com/Nurbid/ha-georgia-natural-gas",
-    "issue_tracker": "https://github.com/Nurbid/ha-georgia-natural-gas/issues",
-    "config_flow": true,
-    "iot_class": "cloud_polling",
-    "requirements": [],
-    "version": "0.1.0"
+  "domain": "georgia_natural_gas",
+  "name": "Georgia Natural Gas",
+  "categories": [
+    "energy.meters_monitoring"
+  ],
+  "codeowners": [
+    "@Nurbid"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/Nurbid/ha-georgia-natural-gas",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Nurbid/ha-georgia-natural-gas/issues",
+  "requirements": [],
+  "version": "0.1.0"
 }
-
