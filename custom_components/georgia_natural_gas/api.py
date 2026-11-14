@@ -7,7 +7,6 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-
 _LOGGER = logging.getLogger(__name__)
 
 BASE_URL = "https://myaccount.gng.com"
