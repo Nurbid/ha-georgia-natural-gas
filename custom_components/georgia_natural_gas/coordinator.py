@@ -7,7 +7,6 @@ import logging
 from datetime import UTC
 
 import aiohttp
-
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
