@@ -3,8 +3,8 @@ import json
 import logging
 from html.parser import HTMLParser
 from urllib.parse import urljoin
+
 import aiohttp
-import asyncio
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class GeorgiaNaturalGasClient:
 
                 html = await response.text()
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG login page request timed out.") from None
 
         except aiohttp.ClientError as err:
@@ -187,7 +187,7 @@ class GeorgiaNaturalGasClient:
                         "GNG returned an invalid broker response."
                     ) from None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG request timed out.") from None
 
         except aiohttp.ClientError as err:
@@ -294,7 +294,7 @@ class GeorgiaNaturalGasClient:
                         "GNG returned CSV data with an invalid text encoding."
                     ) from None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise GNGConnectionError("GNG CSV download timed out.") from None
 
         except aiohttp.ClientError as err:
