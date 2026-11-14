@@ -5,7 +5,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-
 from custom_components.georgia_natural_gas.api import validate_billing_records
 from custom_components.georgia_natural_gas.models import (
     deserialize_billing_record,
@@ -13,7 +12,6 @@ from custom_components.georgia_natural_gas.models import (
     parse_billing_csv,
     serialize_billing_record,
 )
-
 
 HEADER = (
     "Customer Name,Address,Account Number,Bill Date,Bill From Date,"
