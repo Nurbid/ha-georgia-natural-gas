@@ -6,7 +6,10 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from custom_components.georgia_natural_gas.models import parse_billing_csv
-from custom_components.georgia_natural_gas.statistics import build_external_statistics
+from custom_components.georgia_natural_gas.statistics import (
+    build_daily_consumption_statistics,
+    build_external_statistics,
+)
 
 
 HEADER = (
@@ -56,6 +59,9 @@ def test_builds_energy_dashboard_gas_statistics() -> None:
     assert metadata["statistic_id"].startswith(
         "georgia_natural_gas:gas_consumption_"
     )
+    assert metadata["name"] == (
+        "Georgia Natural Gas • Monthly consumption • 1 Example Road"
+    )
     assert metadata["unit_of_measurement"] == "CCF"
     assert metadata["unit_class"] == "volume"
     assert metadata["has_sum"] is True
@@ -87,9 +93,15 @@ def test_imports_therms_and_gas_charges_as_separate_series() -> None:
     therms_metadata, therms = series[1]
     charges_metadata, charges = series[2]
 
+    assert therms_metadata["name"] == (
+        "Georgia Natural Gas • Therm usage • 1 Example Road"
+    )
     assert therms_metadata["unit_of_measurement"] == "thm"
     assert therms_metadata["unit_class"] is None
     assert therms[1]["sum"] == 35.54
+    assert charges_metadata["name"] == (
+        "Georgia Natural Gas • Gas charges • 1 Example Road"
+    )
     assert charges_metadata["unit_of_measurement"] == "USD"
     assert charges_metadata["unit_class"] is None
     assert charges[1]["sum"] == 158.25
@@ -120,3 +132,78 @@ def test_account_numbers_are_not_exposed_in_statistic_ids() -> None:
 
     assert record.account_number not in metadata["statistic_id"]
     assert metadata["source"] == "georgia_natural_gas"
+
+
+def test_daily_statistics_preserve_billed_therms() -> None:
+    """Daily estimates sum exactly to the reported billing-period therms."""
+    record = _record()
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert len(statistics) == record.days_of_service == 32
+    assert statistics[0]["start"].date() == date(2026, 9, 25)
+    assert statistics[-1]["start"].date() == date(2026, 10, 26)
+    assert statistics[-1]["sum"] == 15.54
+    assert statistics[-1]["state"] == 15.54
+
+
+def test_daily_statistics_project_after_latest_bill_through_yesterday() -> None:
+    """The latest billing-period average estimates completed days after the bill."""
+    first = _record()
+    second = replace(
+        first,
+        bill_date=date(2026, 12, 3),
+        bill_from_date=date(2026, 10, 26),
+        bill_to_date=date(2026, 11, 26),
+        days_of_service=31,
+        meter_reading=8577,
+        gas_used_therms=Decimal("20.000"),
+    )
+
+    statistics = build_daily_consumption_statistics(
+        [first, second],
+        timezone=TZ,
+        as_of_date=date(2026, 11, 29),
+    )
+
+    assert len(statistics) == 32 + 31 + 2
+    assert statistics[-1]["start"].date() == date(2026, 11, 28)
+    assert statistics[-1]["sum"] == float(
+        Decimal("15.540") + Decimal("20.000") + (Decimal("20.000") / 31 * 2)
+    )
+
+
+def test_daily_statistics_do_not_include_current_day() -> None:
+    """The in-progress day is not prematurely counted as a full day."""
+    record = _record()
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert statistics[-1]["start"].date() == date(2026, 10, 26)
+
+
+def test_daily_allocation_preserves_decimal_total_exactly() -> None:
+    """The final day absorbs rounding residue instead of losing billed therms."""
+    record = replace(
+        _record(),
+        bill_from_date=date(2026, 1, 1),
+        bill_to_date=date(2026, 1, 4),
+        days_of_service=3,
+        gas_used_therms=Decimal("10.000"),
+    )
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 1, 5),
+    )
+
+    assert statistics[-1]["sum"] == 10.0
