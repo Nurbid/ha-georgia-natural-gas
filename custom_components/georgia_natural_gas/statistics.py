@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Iterable
-from datetime import date, datetime, time, tzinfo
+from datetime import date, time, tzinfo
 from decimal import Decimal
 from hashlib import sha256
 
@@ -143,7 +143,7 @@ def _build_meter_statistics(
             # A substantial decrease indicates a meter replacement/reset.
             if difference < 0 and reading < previous_reading * Decimal("0.9"):
                 difference = reading
-            cumulative_usage += difference
+            cumulative_usage = max(Decimal(0), cumulative_usage + difference)
 
         statistics.append(
             {
