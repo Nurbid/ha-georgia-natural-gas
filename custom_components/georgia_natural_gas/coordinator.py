@@ -28,19 +28,22 @@ from .api import (
     validate_billing_records,
 )
 from .const import (
+    CONF_ACCOUNT_NUMBER,
     CONF_ACCOUNT_SELECTION,
+    CONF_SERVICE_ADDRESS,
     DEFAULT_ACCOUNT_SELECTION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     STORAGE_VERSION,
 )
-from .statistics import build_external_statistics
+from .identity import account_display_name
 from .models import (
     deserialize_billing_record,
     merge_billing_records,
     parse_billing_csv,
     serialize_billing_record,
 )
+from .statistics import build_external_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +75,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         )
 
         self.hass = hass
+        self.config_entry = entry
         self.entry_id = entry.entry_id
         self.client = GeorgiaNaturalGasClient(
             session,
@@ -81,6 +85,13 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         self.account_selection = entry.options.get(
             CONF_ACCOUNT_SELECTION,
             DEFAULT_ACCOUNT_SELECTION,
+        )
+        self.account_number = entry.data.get(CONF_ACCOUNT_NUMBER, "")
+        self.service_address = entry.data.get(CONF_SERVICE_ADDRESS, "")
+        self.account_display_name = (
+            account_display_name(self.account_number, self.service_address)
+            if self.account_number
+            else "Georgia Natural Gas"
         )
 
         # Keep the original storage key for the verified default selection so
@@ -96,6 +107,36 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         )
 
         self.records = []
+
+    def _update_account_identity(self, records) -> None:
+        """Persist the customer-facing account identity and update the entry title."""
+
+        if not records:
+            return
+
+        latest = max(records, key=lambda record: record.bill_date)
+        self.account_number = latest.account_number
+        self.service_address = latest.address
+        self.account_display_name = account_display_name(
+            self.account_number,
+            self.service_address,
+        )
+
+        updated_data = {
+            **self.config_entry.data,
+            CONF_ACCOUNT_NUMBER: self.account_number,
+            CONF_SERVICE_ADDRESS: self.service_address,
+        }
+
+        if (
+            self.config_entry.title != self.account_display_name
+            or self.config_entry.data != updated_data
+        ):
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                title=self.account_display_name,
+                data=updated_data,
+            )
 
     async def _async_setup(self) -> None:
         """Load previously stored billing history for the selected account."""
@@ -133,6 +174,8 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             )
             self.records = []
             return
+
+        self._update_account_identity(self.records)
 
         _LOGGER.info(
             "Restored %s historical GNG billing records for the selected account.",
@@ -227,6 +270,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             ) from err
 
         self.records = merged
+        self._update_account_identity(merged)
 
         # Re-importing the complete series is intentional: Home Assistant
         # upserts statistics by timestamp, so this backfills new records and
