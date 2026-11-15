@@ -56,6 +56,9 @@ def test_builds_energy_dashboard_gas_statistics() -> None:
     assert metadata["statistic_id"].startswith(
         "georgia_natural_gas:gas_consumption_"
     )
+    assert metadata["name"] == (
+        "Georgia Natural Gas • Monthly consumption • 1 Example Road"
+    )
     assert metadata["unit_of_measurement"] == "CCF"
     assert metadata["unit_class"] == "volume"
     assert metadata["has_sum"] is True
@@ -87,9 +90,15 @@ def test_imports_therms_and_gas_charges_as_separate_series() -> None:
     therms_metadata, therms = series[1]
     charges_metadata, charges = series[2]
 
+    assert therms_metadata["name"] == (
+        "Georgia Natural Gas • Therm usage • 1 Example Road"
+    )
     assert therms_metadata["unit_of_measurement"] == "thm"
     assert therms_metadata["unit_class"] is None
     assert therms[1]["sum"] == 35.54
+    assert charges_metadata["name"] == (
+        "Georgia Natural Gas • Gas charges • 1 Example Road"
+    )
     assert charges_metadata["unit_of_measurement"] == "USD"
     assert charges_metadata["unit_class"] is None
     assert charges[1]["sum"] == 158.25
