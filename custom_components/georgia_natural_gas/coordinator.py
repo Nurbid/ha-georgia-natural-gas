@@ -6,6 +6,9 @@ import logging
 from datetime import UTC
 
 import aiohttp
+from homeassistant.components.recorder.statistics import (
+    async_add_external_statistics,
+)
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
@@ -31,6 +34,7 @@ from .const import (
     DOMAIN,
     STORAGE_VERSION,
 )
+from .statistics import build_external_statistics
 from .models import (
     deserialize_billing_record,
     merge_billing_records,
@@ -67,6 +71,8 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             always_update=False,
         )
 
+        self.hass = hass
+        self.entry_id = entry.entry_id
         self.client = GeorgiaNaturalGasClient(
             session,
             entry.data["username"],
@@ -221,6 +227,25 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             ) from err
 
         self.records = merged
+
+        # Re-importing the complete series is intentional: Home Assistant
+        # upserts statistics by timestamp, so this backfills new records and
+        # corrects previously imported values without creating duplicates.
+        try:
+            for metadata, statistics in build_external_statistics(
+                merged,
+                entry_id=self.entry_id,
+                timezone=dt_util.get_default_time_zone(),
+            ):
+                async_add_external_statistics(
+                    self.hass,
+                    metadata,
+                    statistics,
+                )
+        except HomeAssistantError:
+            _LOGGER.exception(
+                "Unable to import GNG historical statistics into Home Assistant."
+            )
 
         _LOGGER.info(
             "Updated GNG billing history for the selected account: "

@@ -117,6 +117,7 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         key="meter_reading",
         name="Meter Reading",
         icon="mdi:counter",
+        native_unit_of_measurement="CCF",
         value_fn=lambda record: record.meter_reading,
     ),
     GNGSensorDescription(
