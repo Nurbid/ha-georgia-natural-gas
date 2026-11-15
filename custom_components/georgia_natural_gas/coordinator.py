@@ -8,6 +8,7 @@ from datetime import UTC
 import aiohttp
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
+    async_import_statistics,
 )
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
@@ -43,7 +44,10 @@ from .models import (
     parse_billing_csv,
     serialize_billing_record,
 )
-from .statistics import build_external_statistics
+from .statistics import (
+    build_daily_consumption_statistics,
+    build_external_statistics,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,6 +111,44 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         )
 
         self.records = []
+        self.gas_consumption_entity_id = None
+
+    def import_gas_consumption_statistics(self, entity_id: str) -> None:
+        """Import daily estimates under the Energy sensor's native statistic ID."""
+
+        if not self.records:
+            return
+
+        self.gas_consumption_entity_id = entity_id
+        try:
+            statistics = build_daily_consumption_statistics(
+                self.records,
+                timezone=dt_util.get_default_time_zone(),
+                as_of_date=dt_util.now().date(),
+            )
+            if not statistics:
+                return
+
+            async_import_statistics(
+                self.hass,
+                {
+                    "statistic_id": entity_id,
+                    "source": "recorder",
+                    "name": (
+                        "Georgia Natural Gas • Estimated daily consumption"
+                        + (f" • {self.service_address}" if self.service_address else "")
+                    ),
+                    "unit_of_measurement": "thm",
+                    "unit_class": "energy",
+                    "has_sum": True,
+                    "mean_type": 0,
+                },
+                statistics,
+            )
+        except (HomeAssistantError, ValueError):
+            _LOGGER.exception(
+                "Unable to import estimated daily GNG consumption statistics."
+            )
 
     def _update_account_identity(self, records) -> None:
         """Persist the customer-facing account identity and update the entry title."""
@@ -271,6 +313,13 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
 
         self.records = merged
         self._update_account_identity(merged)
+
+        # Refresh the Energy sensor's historical series after new billing data
+        # arrives. The entity ID is supplied by the sensor once it is registered.
+        if self.gas_consumption_entity_id:
+            self.import_gas_consumption_statistics(
+                self.gas_consumption_entity_id
+            )
 
         # Re-importing the complete series is intentional: Home Assistant
         # upserts statistics by timestamp, so this backfills new records and
