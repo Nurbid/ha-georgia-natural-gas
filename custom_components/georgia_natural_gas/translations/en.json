@@ -13,6 +13,18 @@
           "password": "Your Georgia Natural Gas customer portal password."
         }
       },
+      "reconfigure": {
+        "title": "Reconfigure Georgia Natural Gas",
+        "description": "Update the username and password used to access your Georgia Natural Gas account.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "Your Georgia Natural Gas customer portal username.",
+          "password": "Your current Georgia Natural Gas customer portal password."
+        }
+      },
       "reauth_confirm": {
         "title": "Reauthenticate with Georgia Natural Gas",
         "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
@@ -24,10 +36,24 @@
         }
       }
     },
+    "abort": {
+      "reconfigure_successful": "Your Georgia Natural Gas configuration was updated successfully."
+    },
     "error": {
-      "invalid_auth": "Authentication failed. Check your password.",
+      "invalid_auth": "Authentication failed. Check your username and password.",
       "cannot_connect": "Unable to connect to Georgia Natural Gas.",
       "unknown": "An unexpected error occurred. Check the Home Assistant logs."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Select GNG account",
+        "description": "Choose the Georgia Natural Gas account whose billing history should be retrieved.",
+        "data": {
+          "account_selection": "GNG account selection"
+        }
+      }
     }
   }
 }

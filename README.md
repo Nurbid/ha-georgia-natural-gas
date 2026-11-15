@@ -12,7 +12,8 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
 - Retrieves detailed billing history from the GNG customer portal.
 - Creates sensors for gas usage, billing charges, payments, meter readings, and billing-period details.
 - Retains previously retrieved billing records locally across Home Assistant restarts.
-- Supports reauthentication when your GNG password changes.
+- Supports manual credential reconfiguration and automatic reauthentication.
+- Provides an account-selection setting; the current implementation exposes the verified default account while multi-account portal discovery is still under development.
 - Polls the portal every 24 hours by default.
 
 ## Installation
@@ -36,6 +37,15 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
 1. Copy the `custom_components/georgia_natural_gas` directory into your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
 3. Add **Georgia Natural Gas** from **Settings → Devices & services**.
+
+## Configuration
+
+- Use the integration entry's **Reconfigure** action to update your GNG username and password. The credentials are validated before the existing entry is updated.
+- Use the entry's **Configure** action to choose the GNG account whose billing history should be retrieved.
+- Changing the selected account reloads the integration. Billing history is stored separately for each selected account, so switching accounts does not mix their records.
+- Automatic reauthentication remains available when GNG rejects previously valid credentials.
+
+The account selector currently contains only the verified default portal selection. Support for discovering and mapping additional GNG accounts is not yet implemented.
 
 ## Sensors
 
@@ -70,12 +80,14 @@ Also, **Amount Due** reflects the amount GNG reports as due (which may be a budg
 - The integration requests detailed billing data from the GNG customer portal.
 - Updates are scheduled every 24 hours.
 - Retrieved billing history is stored locally by Home Assistant and merged with subsequent downloads.
+- Historical records are kept separately for each configured portal account selection.
 - The initial download is limited to the available rolling history requested from the portal.
 - Data availability depends on GNG's portal and its underlying API. Changes to that service may interrupt the integration.
 
 ## Troubleshooting
 
-- If authentication fails after changing your GNG password, use the **Reconfigure** action on the integration and enter the updated password.
+- If authentication fails after changing your GNG password, use the **Reconfigure** action on the integration and enter your current username and password.
+- If the integration detects an authentication failure, Home Assistant will prompt you to reauthenticate.
 - Check **Settings → System → Logs** for integration errors.
 - If GNG changes its customer portal or API, data retrieval may stop working. Please open an issue with relevant logs, but remove usernames, account numbers, addresses, tokens, and other personal information first.
 

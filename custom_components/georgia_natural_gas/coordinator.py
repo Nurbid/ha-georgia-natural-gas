@@ -25,7 +25,8 @@ from .api import (
     validate_billing_records,
 )
 from .const import (
-    DEFAULT_ACCOUNT_NUMBERS,
+    CONF_ACCOUNT_SELECTION,
+    DEFAULT_ACCOUNT_SELECTION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     STORAGE_VERSION,
@@ -71,17 +72,27 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             entry.data["username"],
             entry.data["password"],
         )
+        self.account_selection = entry.options.get(
+            CONF_ACCOUNT_SELECTION,
+            DEFAULT_ACCOUNT_SELECTION,
+        )
+
+        # Keep the original storage key for the verified default selection so
+        # existing users retain their billing history without a schema migration.
+        storage_key = f"{DOMAIN}_{entry.entry_id}"
+        if self.account_selection != DEFAULT_ACCOUNT_SELECTION:
+            storage_key = f"{storage_key}_{self.account_selection}"
 
         self.store = Store(
             hass,
             STORAGE_VERSION,
-            f"{DOMAIN}_{entry.entry_id}",
+            storage_key,
         )
 
         self.records = []
 
     async def _async_setup(self) -> None:
-        """Load previously stored billing history."""
+        """Load previously stored billing history for the selected account."""
 
         try:
             stored = await self.store.async_load()
@@ -118,12 +129,12 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             return
 
         _LOGGER.info(
-            "Restored %s historical GNG billing records.",
+            "Restored %s historical GNG billing records for the selected account.",
             len(self.records),
         )
 
     async def _async_update_data(self):
-        """Fetch and persist the latest GNG billing history."""
+        """Fetch and persist the selected GNG account's billing history."""
 
         try:
             await self.client.login()
@@ -148,7 +159,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             )
 
             csv_data = await self.client.download_billing_data(
-                account_numbers=list(DEFAULT_ACCOUNT_NUMBERS),
+                account_numbers=[self.account_selection],
                 start_date=start_date,
                 end_date=end_date,
             )
@@ -212,7 +223,8 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         self.records = merged
 
         _LOGGER.info(
-            "Updated GNG billing history: %s records (%s received).",
+            "Updated GNG billing history for the selected account: "
+            "%s records (%s received).",
             len(merged),
             len(incoming),
         )
