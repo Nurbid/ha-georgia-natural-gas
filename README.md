@@ -11,6 +11,7 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
 - Authenticates with your Georgia Natural Gas customer-portal credentials.
 - Retrieves detailed billing history from the GNG customer portal.
 - Creates sensors for gas usage, billing charges, payments, meter readings, and billing-period details.
+- Estimates daily gas consumption from actual billed therm totals and exposes a cumulative therm sensor for Home Assistant Energy.
 - Retains previously retrieved billing records locally across Home Assistant restarts.
 - Supports manual credential reconfiguration and automatic reauthentication.
 - Provides an account-selection setting; the current implementation exposes the verified default account while multi-account portal discovery is still under development.
@@ -53,7 +54,8 @@ The integration creates sensors for the latest available billing record:
 
 | Sensor | Description |
 |---|---|
-| Gas Used | Natural gas consumption in therms |
+| Gas Consumption | Cumulative therms, with estimated daily allocation for Energy |
+| Gas Used | Actual therm consumption for the latest billing period |
 | Gas Charges | Gas charges excluding taxes |
 | Other Charges | Additional charges |
 | Promotional Discounts | Promotional discounts |
@@ -71,38 +73,36 @@ The integration creates sensors for the latest available billing record:
 | Billing Period Start | Start date of the billing period |
 | Billing Period End | End date of the billing period |
 
-**Important:** GNG provides consumption totals for billing periods, not daily meter readings. This integration does not estimate or distribute billing-period consumption into daily usage.
+**Important:** GNG provides consumption totals for billing periods, not daily meter readings. The **Gas Consumption** Energy sensor therefore estimates daily usage by distributing each bill's actual therm total evenly across its service days. After the latest bill period, it projects the latest daily average through the previous day. These are estimates, not measured daily readings. When a new bill arrives, the integration replaces the estimate for that billing period with a distribution based on the newly reported total.
 
 Also, **Amount Due** reflects the amount GNG reports as due (which may be a budget-billing amount); it should not be interpreted as the gas-only charge. Use **Gas Charges** for gas charges excluding taxes.
 
 ## Home Assistant Energy dashboard
 
-The integration imports historical statistics directly into Home Assistant's
-Recorder. The **Georgia Natural Gas consumption** statistic is a gas-volume
-series in CCF and can be selected as a gas source:
+The **Gas Consumption** sensor is exposed with `device_class: energy`,
+`state_class: total_increasing`, and `thm` (therms), a unit supported by
+Home Assistant's gas-consumption source selector.
 
 1. Open **Settings → Dashboards → Energy**.
 2. Under **Gas consumption**, select **Add gas source**.
-3. Select **Georgia Natural Gas consumption** and save.
+3. Select the Georgia Natural Gas **Gas Consumption** sensor.
 
-The CCF series is derived from consecutive cumulative meter readings. GNG's
-export provides the meter reading and therm usage for each billing period;
-the meter reading is interpreted as CCF. This interpretation is supported by
-the supplied billing history: a 15 CCF meter-reading increase corresponds to
-15.540 billed therms (a 1.036 therm/CCF factor). The first available reading
-is used as the baseline because the export does not include a preceding
-reading from which to calculate that first period's CCF consumption.
+The sensor is a cumulative total in therms. Because GNG only supplies
+billing-period totals, the integration distributes each bill's actual therm
+consumption evenly across the days in that billing period. It then projects
+the latest billing-period daily average through yesterday until a newer bill
+arrives. The current day is not counted as a complete day.
 
-GNG does not provide daily or hourly consumption. Each imported data point is
-timestamped at the end of its billing period, so Home Assistant attributes the
-period's usage to that date rather than inventing a daily distribution. This
-is the highest temporal resolution the source data supports.
+Historical daily statistics are imported using the exact statistic ID of the
+Energy sensor, so the backfilled history and the live sensor form one
+continuous Energy series. Re-imports update existing timestamps, allowing a
+new bill to replace the previous estimate for that period without duplicating
+statistics. The resulting daily graph is useful for historical comparisons,
+but the daily shape is estimated and should not be mistaken for actual
+meter readings.
 
 Separate historical statistics are also imported for billed therm usage and
-gas charges (excluding taxes). They are intended for Statistics Graph cards
-and are not gas-volume sources for the Energy dashboard. Existing statistics
-are updated by timestamp on every refresh, so corrections and new bills are
-backfilled without duplicating points.
+gas charges (excluding taxes). They are intended for Statistics Graph cards.
 
 ## Data and polling
 
