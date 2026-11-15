@@ -75,7 +75,8 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             config_entry=entry,
             name=DOMAIN,
             update_interval=DEFAULT_SCAN_INTERVAL,
-            always_update=False,
+            # The daily estimate advances even when GNG's billing records do not change.
+            always_update=True,
         )
 
         self.hass = hass
