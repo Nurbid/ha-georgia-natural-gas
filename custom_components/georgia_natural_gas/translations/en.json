@@ -54,7 +54,7 @@
         "title": "Select GNG account",
         "description": "Choose the Georgia Natural Gas account whose billing history should be retrieved.",
         "data": {
-          "account_id": "GNG account"
+          "account_selection": "GNG account selection"
         }
       }
     }
