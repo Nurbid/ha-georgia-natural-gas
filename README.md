@@ -1,4 +1,4 @@
-# Georgia Natural Gas
+# Georgia Natural Gas (GNG)
 
 A custom [Home Assistant](https://www.home-assistant.io/) integration for **Georgia Natural Gas (GNG)**. It retrieves billing history from the GNG customer portal and exposes the latest billing and natural-gas usage figures as Home Assistant sensors.
 
@@ -8,14 +8,14 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
 
 ## Features
 
-- Authenticates with your Georgia Natural Gas customer-portal credentials.
+- Authenticates with your GNG customer-portal credentials.
 - Retrieves detailed billing history from the GNG customer portal.
 - Creates sensors for gas usage, billing charges, payments, meter readings, and billing-period details.
 - Estimates daily gas consumption from actual billed therm totals and exposes a cumulative therm sensor for Home Assistant Energy.
 - Retains previously retrieved billing records locally across Home Assistant restarts.
 - Supports manual credential reconfiguration and automatic reauthentication.
 - Provides an account-selection setting; the current implementation exposes the verified default account while multi-account portal discovery is still under development.
-- Polls the portal every 24 hours by default.
+- Polls the portal every **7 days** by default (configurable, 1–30 days).
 
 ## Installation
 
@@ -28,16 +28,16 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
    `https://github.com/Nurbid/ha-georgia-natural-gas`
 
 4. Select **Integration** as the category and add the repository.
-5. Find **Georgia Natural Gas** in HACS and download it.
+5. Find **Georgia Natural Gas (GNG)** in HACS and download it.
 6. Restart Home Assistant.
 7. Go to **Settings → Devices & services → Add integration**.
-8. Search for **Georgia Natural Gas** and enter your GNG portal username and password.
+8. Search for **Georgia Natural Gas (GNG)** and enter your GNG portal username and password.
 
 ### Manual
 
-1. Copy the `custom_components/georgia_natural_gas` directory into your Home Assistant `custom_components` directory.
+1. Copy the `custom_components/gng` directory into your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
-3. Add **Georgia Natural Gas** from **Settings → Devices & services**.
+3. Add **Georgia Natural Gas (GNG)** from **Settings → Devices & services**.
 
 ## Configuration
 
@@ -92,7 +92,7 @@ Home Assistant's gas-consumption source selector.
 
 1. Open **Settings → Dashboards → Energy**.
 2. Under **Gas consumption**, select **Add gas source**.
-3. Select the Georgia Natural Gas **Gas Consumption** sensor.
+3. Select the GNG **Gas Consumption** sensor.
 
 ### Gas cost
 

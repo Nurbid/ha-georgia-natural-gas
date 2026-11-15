@@ -6,7 +6,7 @@ from datetime import date, datetime, time, tzinfo
 from decimal import Decimal
 from hashlib import sha256
 
-from .const import DOMAIN
+from .const import DOMAIN, SHORT_NAME
 from .models import BillingRecord
 
 
@@ -63,7 +63,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_consumption",
                         suffix,
-                        f"Georgia Natural Gas • Monthly consumption • {address}",
+                        f"{SHORT_NAME} • Monthly consumption • {address}",
                         "CCF",
                         "volume",
                     ),
@@ -73,7 +73,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_usage_therms",
                         suffix,
-                        f"Georgia Natural Gas • Therm usage • {address}",
+                        f"{SHORT_NAME} • Therm usage • {address}",
                         "thm",
                         None,
                     ),
@@ -87,7 +87,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_charges_usd",
                         suffix,
-                        f"Georgia Natural Gas • Gas charges • {address}",
+                        f"{SHORT_NAME} • Gas charges • {address}",
                         "USD",
                         None,
                     ),
@@ -135,7 +135,7 @@ def build_external_service_cost_statistics(
             _metadata(
                 "gas_service_cost_usd",
                 (entry_id, account_number),
-                f"Georgia Natural Gas • Actual service cost • {address}",
+                f"{SHORT_NAME} • Actual service cost • {address}",
                 "USD",
                 None,
             ),

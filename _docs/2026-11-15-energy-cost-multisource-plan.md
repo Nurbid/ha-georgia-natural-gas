@@ -26,7 +26,7 @@
 
 ### Task 2: API — EppHistory + incremental Detailed
 
-**Files:** `custom_components/georgia_natural_gas/api.py`, `const.py`
+**Files:** `custom_components/gng/api.py`, `const.py`
 
 - Add `download_authlink_file(path, *, referer)`
 - Add `download_price_plan_history()` → `/EppHistorySpreadsheet`
@@ -37,7 +37,7 @@
 
 ### Task 3: Models — PricePlan + cost resolve
 
-**Files:** `custom_components/georgia_natural_gas/models.py` (or `price_plan.py` + `reconcile.py`)
+**Files:** `custom_components/gng/models.py` (or `price_plan.py` + `reconcile.py`)
 
 - `PricePlanPeriod` + CSV parse/serialize/merge
 - `resolve_actual_service_cost(billing, price_plan|None) -> (Decimal, source)`
@@ -47,7 +47,7 @@
 
 ### Task 4: Statistics — daily cost series
 
-**Files:** `custom_components/georgia_natural_gas/statistics.py`, `tests/test_statistics.py`
+**Files:** `custom_components/gng/statistics.py`, `tests/test_statistics.py`
 
 - Generalize daily allocator; `build_daily_cost_statistics(records, cost_by_bill_date, ...)`
 - External series for actual service cost (optional alongside excl-tax charges)

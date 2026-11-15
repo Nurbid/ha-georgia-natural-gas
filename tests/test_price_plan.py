@@ -3,15 +3,15 @@
 from datetime import date
 from decimal import Decimal
 
-from custom_components.georgia_natural_gas.models import parse_billing_csv
-from custom_components.georgia_natural_gas.price_plan import (
+from custom_components.gng.models import parse_billing_csv
+from custom_components.gng.price_plan import (
     build_cost_by_bill_date,
     detect_plan_capability,
     detailed_component_cost,
     parse_price_plan_csv,
     resolve_actual_service_cost,
 )
-from custom_components.georgia_natural_gas.statistics import (
+from custom_components.gng.statistics import (
     build_daily_cost_statistics,
 )
 from zoneinfo import ZoneInfo

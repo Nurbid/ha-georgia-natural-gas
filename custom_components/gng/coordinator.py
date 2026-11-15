@@ -1,4 +1,4 @@
-"""Data coordinator for Georgia Natural Gas."""
+"""Data coordinator for GNG."""
 
 import calendar
 import csv
@@ -42,6 +42,7 @@ from .const import (
     PLAN_CAPABILITY_BUDGET_BILLING,
     PLAN_CAPABILITY_NONE,
     PLAN_CAPABILITY_UNKNOWN,
+    SHORT_NAME,
     STORAGE_VERSION,
 )
 from .identity import account_display_name
@@ -157,7 +158,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         self.account_display_name = (
             account_display_name(self.account_number, self.service_address)
             if self.account_number
-            else "Georgia Natural Gas"
+            else SHORT_NAME
         )
 
         # Keep the original storage key for the verified default selection so
@@ -222,7 +223,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
                     "statistic_id": entity_id,
                     "source": "recorder",
                     "name": (
-                        "Georgia Natural Gas • Estimated daily consumption"
+                        f"{SHORT_NAME} • Estimated daily consumption"
                         + (f" • {self.service_address}" if self.service_address else "")
                     ),
                     "unit_of_measurement": "thm",
@@ -260,7 +261,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
                     "statistic_id": entity_id,
                     "source": "recorder",
                     "name": (
-                        "Georgia Natural Gas • Estimated daily service cost"
+                        f"{SHORT_NAME} • Estimated daily service cost"
                         + (f" • {self.service_address}" if self.service_address else "")
                     ),
                     "unit_of_measurement": "USD",

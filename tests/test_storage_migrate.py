@@ -1,6 +1,6 @@
 """Tests for GNG Store schema migration."""
 
-from custom_components.georgia_natural_gas.storage import migrate_storage_data
+from custom_components.gng.storage import migrate_storage_data
 
 
 def test_migrate_v1_adds_price_plan_fields() -> None:

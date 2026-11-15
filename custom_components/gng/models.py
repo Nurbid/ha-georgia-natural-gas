@@ -1,4 +1,4 @@
-"""Data models and CSV parsing for Georgia Natural Gas billing records."""
+"""Data models and CSV parsing for GNG billing records."""
 
 import csv
 import io

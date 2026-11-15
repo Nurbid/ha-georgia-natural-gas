@@ -1,4 +1,4 @@
-"""Async client for the Georgia Natural Gas customer portal."""
+"""Async client for the GNG customer portal."""
 
 import json
 import logging
@@ -13,7 +13,7 @@ BASE_URL = "https://myaccount.gng.com"
 
 
 class GNGError(Exception):
-    """Base exception for Georgia Natural Gas API errors."""
+    """Base exception for GNG API errors."""
 
 
 class GNGAuthenticationError(GNGError):
