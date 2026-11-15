@@ -1,4 +1,4 @@
-"""Persisted storage helpers for Georgia Natural Gas."""
+"""Persisted storage helpers for GNG."""
 
 from .const import PLAN_CAPABILITY_UNKNOWN
 

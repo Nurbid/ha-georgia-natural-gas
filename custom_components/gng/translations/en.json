@@ -2,54 +2,54 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Georgia Natural Gas",
-        "description": "Enter your Georgia Natural Gas customer portal credentials.",
+        "title": "Connect to Georgia Natural Gas (GNG)",
+        "description": "Enter your GNG customer portal credentials.",
         "data": {
           "username": "Username",
           "password": "Password"
         },
         "data_description": {
-          "username": "Your Georgia Natural Gas customer portal username.",
-          "password": "Your Georgia Natural Gas customer portal password."
+          "username": "Your GNG customer portal username.",
+          "password": "Your GNG customer portal password."
         }
       },
       "reconfigure": {
-        "title": "Reconfigure Georgia Natural Gas",
-        "description": "Update the username and password used to access your Georgia Natural Gas account.",
+        "title": "Reconfigure GNG",
+        "description": "Update the username and password used to access your GNG account.",
         "data": {
           "username": "Username",
           "password": "Password"
         },
         "data_description": {
-          "username": "Your Georgia Natural Gas customer portal username.",
-          "password": "Your current Georgia Natural Gas customer portal password."
+          "username": "Your GNG customer portal username.",
+          "password": "Your current GNG customer portal password."
         }
       },
       "reauth_confirm": {
-        "title": "Reauthenticate with Georgia Natural Gas",
+        "title": "Reauthenticate with GNG",
         "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
         "data": {
           "password": "Password"
         },
         "data_description": {
-          "password": "Your current Georgia Natural Gas customer portal password."
+          "password": "Your current GNG customer portal password."
         }
       }
     },
     "abort": {
-      "reconfigure_successful": "Your Georgia Natural Gas configuration was updated successfully."
+      "reconfigure_successful": "Your GNG configuration was updated successfully."
     },
     "error": {
       "invalid_auth": "Authentication failed. Check your username and password.",
-      "cannot_connect": "Unable to connect to Georgia Natural Gas.",
+      "cannot_connect": "Unable to connect to GNG.",
       "unknown": "An unexpected error occurred. Check the Home Assistant logs."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Georgia Natural Gas options",
-        "description": "Choose the Georgia Natural Gas account and how often billing data should be refreshed. After the first full history download, subsequent updates request only the current bill plus Price Plan history.",
+        "title": "GNG options",
+        "description": "Choose the GNG account and how often billing data should be refreshed. After the first full history download, subsequent updates request only the current bill plus Price Plan history.",
         "data": {
           "account_selection": "GNG account selection",
           "update_interval_days": "Update interval (days)"

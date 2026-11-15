@@ -1,4 +1,4 @@
-"""Configuration and options flows for Georgia Natural Gas."""
+"""Configuration and options flows for GNG."""
 
 import logging
 from collections.abc import Mapping
@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_ACCOUNT_SELECTION,
     DEFAULT_UPDATE_INTERVAL_DAYS,
     DOMAIN,
+    INTEGRATION_NAME,
     MAX_UPDATE_INTERVAL_DAYS,
     MIN_UPDATE_INTERVAL_DAYS,
 )
@@ -74,7 +75,7 @@ class GeorgiaNaturalGasConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             else:
                 return self.async_create_entry(
-                    title="Georgia Natural Gas",
+                    title=INTEGRATION_NAME,
                     data={
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,

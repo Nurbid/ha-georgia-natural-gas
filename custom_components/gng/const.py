@@ -1,8 +1,11 @@
-"""Constants for the Georgia Natural Gas integration."""
+"""Constants for the GNG integration."""
 
 from datetime import timedelta
 
-DOMAIN = "georgia_natural_gas"
+DOMAIN = "gng"
+
+INTEGRATION_NAME = "Georgia Natural Gas (GNG)"
+SHORT_NAME = "GNG"
 
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"

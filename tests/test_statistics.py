@@ -5,8 +5,8 @@ from datetime import date
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from custom_components.georgia_natural_gas.models import parse_billing_csv
-from custom_components.georgia_natural_gas.statistics import (
+from custom_components.gng.models import parse_billing_csv
+from custom_components.gng.statistics import (
     build_daily_consumption_statistics,
     build_external_statistics,
 )
@@ -57,10 +57,10 @@ def test_builds_energy_dashboard_gas_statistics() -> None:
     metadata, stats = _series([previous, current])[0]
 
     assert metadata["statistic_id"].startswith(
-        "georgia_natural_gas:gas_consumption_"
+        "gng:gas_consumption_"
     )
     assert metadata["name"] == (
-        "Georgia Natural Gas • Monthly consumption • 1 Example Road"
+        "GNG • Monthly consumption • 1 Example Road"
     )
     assert metadata["unit_of_measurement"] == "CCF"
     assert metadata["unit_class"] == "volume"
@@ -94,13 +94,13 @@ def test_imports_therms_and_gas_charges_as_separate_series() -> None:
     charges_metadata, charges = series[2]
 
     assert therms_metadata["name"] == (
-        "Georgia Natural Gas • Therm usage • 1 Example Road"
+        "GNG • Therm usage • 1 Example Road"
     )
     assert therms_metadata["unit_of_measurement"] == "thm"
     assert therms_metadata["unit_class"] is None
     assert therms[1]["sum"] == 35.54
     assert charges_metadata["name"] == (
-        "Georgia Natural Gas • Gas charges • 1 Example Road"
+        "GNG • Gas charges • 1 Example Road"
     )
     assert charges_metadata["unit_of_measurement"] == "USD"
     assert charges_metadata["unit_class"] is None
@@ -131,7 +131,7 @@ def test_account_numbers_are_not_exposed_in_statistic_ids() -> None:
     metadata, _ = _series([record])[0]
 
     assert record.account_number not in metadata["statistic_id"]
-    assert metadata["source"] == "georgia_natural_gas"
+    assert metadata["source"] == "gng"
 
 
 def test_daily_statistics_preserve_billed_therms() -> None:

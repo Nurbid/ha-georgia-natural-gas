@@ -1,5 +1,5 @@
 
-"""Georgia Natural Gas integration."""
+"""GNG integration."""
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -15,7 +15,7 @@ async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> None:
-    """Set up Georgia Natural Gas from a config entry."""
+    """Set up GNG from a config entry."""
 
     coordinator = GeorgiaNaturalGasCoordinator(
         hass,
@@ -37,7 +37,7 @@ async def async_unload_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> None:
-    """Unload Georgia Natural Gas."""
+    """Unload GNG."""
 
     await hass.config_entries.async_unload_platforms_or_raise(
         entry,

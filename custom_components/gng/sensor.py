@@ -1,4 +1,4 @@
-"""Sensor platform for Georgia Natural Gas."""
+"""Sensor platform for GNG."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING
+from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING, SHORT_NAME
 from .coordinator import GeorgiaNaturalGasCoordinator
 from .models import BillingRecord
 from .price_plan import PricePlanPeriod
@@ -269,14 +269,14 @@ class GNGSensor(
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
 
-        device_name = "Georgia Natural Gas"
+        device_name = SHORT_NAME
         if coordinator.service_address:
             device_name = f"{device_name} • {coordinator.service_address}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=device_name,
-            manufacturer="Georgia Natural Gas",
+            manufacturer=SHORT_NAME,
         )
 
     async def async_added_to_hass(self) -> None:

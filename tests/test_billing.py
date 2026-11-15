@@ -6,8 +6,8 @@ from decimal import Decimal
 
 import pytest
 
-from custom_components.georgia_natural_gas.api import validate_billing_records
-from custom_components.georgia_natural_gas.models import (
+from custom_components.gng.api import validate_billing_records
+from custom_components.gng.models import (
     deserialize_billing_record,
     merge_billing_records,
     parse_billing_csv,

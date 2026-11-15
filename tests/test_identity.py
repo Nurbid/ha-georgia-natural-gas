@@ -1,6 +1,6 @@
 """Tests for GNG account identity presentation."""
 
-from custom_components.georgia_natural_gas.identity import (
+from custom_components.gng.identity import (
     account_display_name,
     format_account_number,
 )
