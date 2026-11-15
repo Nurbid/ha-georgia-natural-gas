@@ -37,10 +37,7 @@
       }
     },
     "abort": {
-      "reconfigure_successful": {
-        "title": "Configuration updated",
-        "description": "Your Georgia Natural Gas credentials have been updated."
-      }
+      "reconfigure_successful": "Your Georgia Natural Gas configuration was updated successfully."
     },
     "error": {
       "invalid_auth": "Authentication failed. Check your username and password.",
