@@ -232,7 +232,11 @@ def build_daily_consumption_statistics(
                 continue
             if usage_date in daily_usage:
                 raise ValueError("GNG billing periods contain overlapping dates.")
-            daily_usage[usage_date] = daily_usage_value
+            daily_usage[usage_date] = (
+                record.gas_used_therms - daily_usage_value * (period_days - 1)
+                if day_number == period_days
+                else daily_usage_value
+            )
 
     if ordered:
         latest = ordered[-1]
