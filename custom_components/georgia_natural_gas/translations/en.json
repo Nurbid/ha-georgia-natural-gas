@@ -48,10 +48,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "Select GNG account",
-        "description": "Choose the Georgia Natural Gas account whose billing history should be retrieved.",
+        "title": "Georgia Natural Gas options",
+        "description": "Choose the Georgia Natural Gas account and how often billing data should be refreshed. After the first full history download, subsequent updates request only the current bill plus Price Plan history.",
         "data": {
-          "account_selection": "GNG account selection"
+          "account_selection": "GNG account selection",
+          "update_interval_days": "Update interval (days)"
+        },
+        "data_description": {
+          "account_selection": "Portal account selection used for billing exports. Multi-account discovery is not available yet.",
+          "update_interval_days": "How often to poll the GNG portal after the initial history seed (1–30 days). Default is 7."
         }
       }
     }

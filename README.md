@@ -55,6 +55,11 @@ The integration creates sensors for the latest available billing record:
 | Sensor | Description |
 |---|---|
 | Gas Consumption | Cumulative therms, with estimated daily allocation for Energy |
+| Gas Service Cost | Cumulative actual service cost (USD) for Energy cost tracking |
+| Actual Bill Charges | Latest Price Plan actual charges (budget billing accounts) |
+| Budget Billing Installment | Latest Price Plan installment amount |
+| Monthly Budget Variance | Latest Price Plan monthly variance (actual − installment) |
+| Accumulated Budget Variance | Running Price Plan budget variance |
 | Gas Used | Actual therm consumption for the latest billing period |
 | Gas Charges | Gas charges excluding taxes |
 | Other Charges | Additional charges |
@@ -62,7 +67,7 @@ The integration creates sensors for the latest available billing record:
 | Taxes | Taxes assessed |
 | Payments | Sum of payments |
 | Balance Forward | Balance carried into the bill |
-| Budget Billing Amount | Budget billing amount |
+| Budget Billing Amount | Budget billing amount from Detailed export |
 | Guaranteed Billing Amount | Guaranteed billing amount |
 | Amount Due | Amount due as reported by GNG |
 | Meter Reading | Meter reading reported on the bill |
@@ -75,9 +80,11 @@ The integration creates sensors for the latest available billing record:
 
 **Important:** GNG provides consumption totals for billing periods, not daily meter readings. The **Gas Consumption** Energy sensor therefore estimates daily usage by distributing each bill's actual therm total evenly across its service days. After the latest bill period, it projects the latest daily average through the previous day. These are estimates, not measured daily readings. When a new bill arrives, the integration replaces the estimate for that billing period with a distribution based on the newly reported total.
 
-Also, **Amount Due** reflects the amount GNG reports as due (which may be a budget-billing amount); it should not be interpreted as the gas-only charge. Use **Gas Charges** for gas charges excluding taxes.
+Also, **Amount Due** reflects the amount GNG reports as due (which may be a budget-billing amount); it should not be interpreted as the gas-only charge. Use **Gas Service Cost** / **Actual Bill Charges** for Energy cost tracking, and **Gas Charges** for commodity charges excluding taxes.
 
 ## Home Assistant Energy dashboard
+
+### Gas consumption
 
 The **Gas Consumption** sensor is exposed with `device_class: energy`,
 `state_class: total_increasing`, and `thm` (therms), a unit supported by
@@ -87,30 +94,49 @@ Home Assistant's gas-consumption source selector.
 2. Under **Gas consumption**, select **Add gas source**.
 3. Select the Georgia Natural Gas **Gas Consumption** sensor.
 
-The sensor is a cumulative total in therms. Because GNG only supplies
-billing-period totals, the integration distributes each bill's actual therm
-consumption evenly across the days in that billing period. It then projects
-the latest billing-period daily average through yesterday until a newer bill
-arrives. The current day is not counted as a complete day.
+### Gas cost
 
-Historical daily statistics are imported using the exact statistic ID of the
+The **Gas Service Cost** sensor is exposed with `device_class: monetary`,
+`state_class: total_increasing`, and `USD`. Use it with Energy's
+**Use an entity tracking the total costs** option.
+
+1. In the same gas source configuration, choose **Use an entity tracking the total costs**.
+2. Select **Gas Service Cost**.
+
+Cost values come from GNG Price Plan **Actual Bill Charges** when available.
+If Price Plan history is missing (non-budget accounts), the integration falls
+back to `Gas Charges + Taxes + Other Charges + Promotional Discounts` from
+the Detailed billing export. Budget installments and payment history are
+never used as Energy costs.
+
+Because GNG only supplies billing-period totals, the integration distributes
+each bill's actual therms and actual service cost evenly across the days in
+that billing period. It then projects the latest daily average through
+yesterday until a newer bill arrives. The current day is not counted as a
+complete day. These are estimates, not measured daily meter or rate data.
+
+Historical daily statistics are imported using the exact statistic ID of each
 Energy sensor, so the backfilled history and the live sensor form one
 continuous Energy series. Re-imports update existing timestamps, allowing a
 new bill to replace the previous estimate for that period without duplicating
-statistics. The resulting daily graph is useful for historical comparisons,
-but the daily shape is estimated and should not be mistaken for actual
-meter readings.
+statistics.
 
-Separate historical statistics are also imported for billed therm usage and
-gas charges (excluding taxes). They are intended for Statistics Graph cards.
+Separate historical statistics are also imported for billed therm usage, gas
+charges excluding taxes, and reconciled actual service cost. They are intended
+for Statistics Graph cards.
 
 ## Data and polling
 
-- The integration requests detailed billing data from the GNG customer portal.
-- Updates are scheduled every 24 hours.
+- The integration requests Detailed billing data and Price Plan
+  (`/EppHistorySpreadsheet`) history from the GNG customer portal.
+- The first update downloads up to ~24 months of Detailed history.
+- Later updates request the current bill only (merged into local history) plus
+  the full Price Plan spreadsheet (no date-range filter on that export).
+- The default update interval is **7 days** and is configurable in the
+  integration options (1–30 days).
 - Retrieved billing history is stored locally by Home Assistant and merged with subsequent downloads.
 - Historical records are kept separately for each configured portal account selection.
-- The initial download is limited to the available rolling history requested from the portal.
+- Multi-account portal discovery is not implemented yet; selection remains `"1"`.
 - Data availability depends on GNG's portal and its underlying API. Changes to that service may interrupt the integration.
 
 ## Troubleshooting
