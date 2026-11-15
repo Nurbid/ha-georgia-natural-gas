@@ -42,18 +42,16 @@ def _series(records):
 
 def test_builds_energy_dashboard_gas_statistics() -> None:
     """Cumulative meter readings become CCF statistics with correct dates."""
-    first = _record()
-    second = replace(
-        first,
-        bill_date=date(2026, 12, 3),
-        bill_from_date=date(2026, 10, 26),
-        bill_to_date=date(2026, 11, 26),
-        meter_reading=8577,
-        gas_used_therms=Decimal("15.540"),
-        gas_charges_excl_taxes=Decimal("80.00"),
+    current = _record()
+    previous = replace(
+        current,
+        bill_date=date(2026, 10, 3),
+        bill_from_date=date(2026, 8, 25),
+        bill_to_date=date(2026, 9, 24),
+        meter_reading=8546,
     )
 
-    metadata, stats = _series([first, second])[0]
+    metadata, stats = _series([previous, current])[0]
 
     assert metadata["statistic_id"].startswith(
         "georgia_natural_gas:gas_consumption_"
@@ -62,10 +60,12 @@ def test_builds_energy_dashboard_gas_statistics() -> None:
     assert metadata["unit_class"] == "volume"
     assert metadata["has_sum"] is True
     assert len(stats) == 2
-    assert stats[0]["state"] == 8561.0
+    assert stats[0]["state"] == 8546.0
     assert stats[0]["sum"] == 0.0
-    assert stats[1]["state"] == 8577.0
-    assert stats[1]["sum"] == 16.0
+    assert stats[1]["state"] == 8561.0
+    assert stats[1]["sum"] == 15.0
+    # The supplied bill data reports 15.540 therms for this 15 CCF interval.
+    assert current.gas_used_therms / Decimal(str(stats[1]["sum"])) == Decimal("1.036")
     assert stats[1]["start"].hour == 23
     assert stats[1]["start"].tzinfo is not None
 
