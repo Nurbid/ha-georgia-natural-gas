@@ -107,6 +107,43 @@ def build_external_statistics(
     ]
 
 
+def build_external_service_cost_statistics(
+    records: Iterable[BillingRecord],
+    cost_by_bill_date: dict[date, Decimal],
+    *,
+    entry_id: str,
+    timezone: tzinfo,
+) -> list[tuple[dict, list[dict]]]:
+    """Build cumulative actual service-cost external statistics."""
+
+    ordered = _ordered_account_records(records)
+    if not ordered:
+        return []
+
+    address = ordered[-1].address
+    account_number = ordered[-1].account_number
+    statistics = _build_increment_statistics(
+        ordered,
+        timezone,
+        lambda record: cost_by_bill_date.get(record.bill_date, Decimal(0)),
+    )
+    if not statistics:
+        return []
+
+    return [
+        (
+            _metadata(
+                "gas_service_cost_usd",
+                (entry_id, account_number),
+                f"Georgia Natural Gas • Actual service cost • {address}",
+                "USD",
+                None,
+            ),
+            statistics,
+        )
+    ]
+
+
 def _metadata(
     metric: str,
     suffix: tuple[str, str],
@@ -180,18 +217,11 @@ def _build_increment_statistics(
     return statistics
 
 
-def build_daily_consumption_statistics(
+def _ordered_account_records(
     records: Iterable[BillingRecord],
-    *,
-    timezone: tzinfo,
-    as_of_date: date,
-) -> list[dict]:
-    """Build estimated daily cumulative therm statistics from billing totals.
+) -> list[BillingRecord]:
+    """Return one account's billing periods ordered by service end date."""
 
-    Each bill's actual therm total is distributed evenly across its service
-    days. After the latest bill period, the latest daily average is projected
-    through yesterday. The current day is intentionally left incomplete.
-    """
     records_by_account: dict[str, list[BillingRecord]] = defaultdict(list)
     for record in records:
         records_by_account[record.account_number].append(record)
@@ -210,63 +240,120 @@ def build_daily_consumption_statistics(
         key=lambda record: (record.bill_to_date, record.bill_date),
     )
     records_by_end_date = {record.bill_to_date: record for record in ordered}
-    ordered = [
+    return [
         records_by_end_date[end_date]
         for end_date in sorted(records_by_end_date)
     ]
 
+
+def _build_daily_amount_statistics(
+    records: Iterable[BillingRecord],
+    amount_fn: Callable[[BillingRecord], Decimal],
+    *,
+    timezone: tzinfo,
+    as_of_date: date,
+) -> list[dict]:
+    """Distribute period amounts evenly across service days, then project.
+
+    Each period total is split across its service days. After the latest bill
+    period, the latest daily average is projected through yesterday. The
+    current day is intentionally left incomplete.
+    """
+
+    ordered = _ordered_account_records(records)
+    if not ordered:
+        return []
+
     yesterday = date.fromordinal(as_of_date.toordinal() - 1)
-    daily_usage: dict[date, Decimal] = {}
+    daily_amounts: dict[date, Decimal] = {}
 
     for record in ordered:
         period_days = (record.bill_to_date - record.bill_from_date).days
         if period_days <= 0 or period_days != record.days_of_service:
-            raise ValueError("GNG billing period dates do not match service days.")
+            raise ValueError(
+                "GNG billing period dates do not match service days."
+            )
 
-        daily_usage_value = record.gas_used_therms / Decimal(period_days)
+        period_amount = amount_fn(record)
+        daily_value = period_amount / Decimal(period_days)
         for day_number in range(1, period_days + 1):
-            usage_date = date.fromordinal(
+            amount_date = date.fromordinal(
                 record.bill_from_date.toordinal() + day_number
             )
-            if usage_date > yesterday:
+            if amount_date > yesterday:
                 continue
-            if usage_date in daily_usage:
-                raise ValueError("GNG billing periods contain overlapping dates.")
-            daily_usage[usage_date] = (
-                record.gas_used_therms - daily_usage_value * (period_days - 1)
+            if amount_date in daily_amounts:
+                raise ValueError(
+                    "GNG billing periods contain overlapping dates."
+                )
+            daily_amounts[amount_date] = (
+                period_amount - daily_value * (period_days - 1)
                 if day_number == period_days
-                else daily_usage_value
+                else daily_value
             )
 
-    if ordered:
-        latest = ordered[-1]
-        period_days = (latest.bill_to_date - latest.bill_from_date).days
-        if period_days > 0:
-            estimated_daily_usage = (
-                latest.gas_used_therms / Decimal(period_days)
+    latest = ordered[-1]
+    period_days = (latest.bill_to_date - latest.bill_from_date).days
+    if period_days > 0:
+        estimated_daily = amount_fn(latest) / Decimal(period_days)
+        first_estimated_day = date.fromordinal(
+            latest.bill_to_date.toordinal() + 1
+        )
+        for day_number in range(
+            max(0, (yesterday - first_estimated_day).days + 1)
+        ):
+            amount_date = date.fromordinal(
+                first_estimated_day.toordinal() + day_number
             )
-            first_estimated_day = date.fromordinal(
-                latest.bill_to_date.toordinal() + 1
-            )
-            for day_number in range(
-                max(0, (yesterday - first_estimated_day).days + 1)
-            ):
-                usage_date = date.fromordinal(
-                    first_estimated_day.toordinal() + day_number
-                )
-                daily_usage.setdefault(usage_date, estimated_daily_usage)
+            daily_amounts.setdefault(amount_date, estimated_daily)
 
     statistics: list[dict] = []
-    cumulative_usage = Decimal(0)
+    cumulative = Decimal(0)
 
-    for usage_date, daily_amount in sorted(daily_usage.items()):
-        cumulative_usage += daily_amount
+    for amount_date, daily_amount in sorted(daily_amounts.items()):
+        cumulative += daily_amount
         statistics.append(
             {
-                "start": _billing_timestamp(usage_date, timezone),
-                "state": float(cumulative_usage),
-                "sum": float(cumulative_usage),
+                "start": _billing_timestamp(amount_date, timezone),
+                "state": float(cumulative),
+                "sum": float(cumulative),
             }
         )
 
     return statistics
+
+
+def build_daily_consumption_statistics(
+    records: Iterable[BillingRecord],
+    *,
+    timezone: tzinfo,
+    as_of_date: date,
+) -> list[dict]:
+    """Build estimated daily cumulative therm statistics from billing totals."""
+
+    return _build_daily_amount_statistics(
+        records,
+        lambda record: record.gas_used_therms,
+        timezone=timezone,
+        as_of_date=as_of_date,
+    )
+
+
+def build_daily_cost_statistics(
+    records: Iterable[BillingRecord],
+    cost_by_bill_date: dict[date, Decimal],
+    *,
+    timezone: tzinfo,
+    as_of_date: date,
+) -> list[dict]:
+    """Build estimated daily cumulative USD statistics from actual service costs."""
+
+    def amount_fn(record: BillingRecord) -> Decimal:
+        return cost_by_bill_date.get(record.bill_date, Decimal(0))
+
+    return _build_daily_amount_statistics(
+        records,
+        amount_fn,
+        timezone=timezone,
+        as_of_date=as_of_date,
+    )

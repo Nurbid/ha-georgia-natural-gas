@@ -3,7 +3,7 @@
 import json
 import logging
 from html.parser import HTMLParser
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
 import aiohttp
 
@@ -214,7 +214,95 @@ class GeorgiaNaturalGasClient:
 
         return result
 
-    async def download_billing_data(self, account_numbers, start_date, end_date):
+    async def download_authlink_file(self, path, *, referer):
+        """Download a portal authlink spreadsheet (GET path?Token=...&nr=1)."""
+
+        if not self.authenticated:
+            raise GNGAuthenticationError("Not authenticated with GNG.")
+
+        if not self.token:
+            raise GNGAuthenticationError("No security token available.")
+
+        if not self.session or self.session.closed:
+            raise GNGConnectionError("HTTP session is not available.")
+
+        query = urlencode({"Token": self.token, "nr": "1"})
+        url = urljoin(BASE_URL, f"{path}?{query}")
+
+        try:
+            async with self.session.get(
+                url,
+                headers={"Referer": urljoin(BASE_URL, referer)},
+            ) as response:
+                if response.status in (401, 403):
+                    self.authenticated = False
+                    raise GNGAuthenticationError(
+                        f"GNG rejected the spreadsheet download "
+                        f"(HTTP {response.status})."
+                    )
+
+                if response.status != 200:
+                    raise GNGConnectionError(
+                        f"GNG spreadsheet download failed "
+                        f"(HTTP {response.status})."
+                    )
+
+                if response.url.path.rstrip("/").lower() == "/login":
+                    self.authenticated = False
+                    raise GNGAuthenticationError(
+                        "GNG redirected the spreadsheet download to its "
+                        "login page."
+                    )
+
+                content_type = response.headers.get("Content-Type", "")
+
+                try:
+                    body = await response.text()
+                except UnicodeDecodeError:
+                    raise GNGError(
+                        "GNG returned spreadsheet data with an invalid "
+                        "text encoding."
+                    ) from None
+
+        except TimeoutError:
+            raise GNGConnectionError(
+                "GNG spreadsheet download timed out."
+            ) from None
+
+        except aiohttp.ClientError as err:
+            raise GNGConnectionError(
+                "Unable to download GNG spreadsheet: "
+                f"{type(err).__name__}."
+            ) from None
+
+        if not body.strip():
+            raise GNGError("GNG returned an empty spreadsheet export.")
+
+        _LOGGER.info("Successfully downloaded GNG spreadsheet %s.", path)
+
+        return body, content_type
+
+    async def download_price_plan_history(self):
+        """Download Price Plan / budget-billing history CSV.
+
+        Portal page: /BudgetBillingPlan
+        Export: GET /EppHistorySpreadsheet?Token=&nr=1
+        """
+
+        csv_data, _content_type = await self.download_authlink_file(
+            "/EppHistorySpreadsheet",
+            referer="/BudgetBillingPlan",
+        )
+        return csv_data
+
+    async def download_billing_data(
+        self,
+        account_numbers,
+        start_date,
+        end_date,
+        *,
+        is_current_bill_selected=False,
+    ):
         """Request and download detailed billing data as CSV."""
 
         if not self.authenticated:
@@ -225,7 +313,7 @@ class GeorgiaNaturalGasClient:
             "AccountNumbers": account_numbers,
             "StartDate": start_date,
             "EndDate": end_date,
-            "IsCurrentBillSelected": False,
+            "IsCurrentBillSelected": is_current_bill_selected,
             "DownloadType": "BillingData",
             "BillingDataType": "Detailed",
             "BillingSummary": True,
@@ -305,7 +393,11 @@ class GeorgiaNaturalGasClient:
         if not csv_data.strip():
             raise GNGError("GNG returned an empty billing export.")
 
-        _LOGGER.info("Successfully downloaded GNG billing data.")
+        _LOGGER.info(
+            "Successfully downloaded GNG billing data "
+            "(current_bill=%s).",
+            is_current_bill_selected,
+        )
 
         return csv_data
 

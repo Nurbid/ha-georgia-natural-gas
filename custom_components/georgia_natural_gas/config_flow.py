@@ -23,8 +23,12 @@ from .const import (
     CONF_ACCOUNT_NUMBER,
     CONF_ACCOUNT_SELECTION,
     CONF_SERVICE_ADDRESS,
+    CONF_UPDATE_INTERVAL_DAYS,
     DEFAULT_ACCOUNT_SELECTION,
+    DEFAULT_UPDATE_INTERVAL_DAYS,
     DOMAIN,
+    MAX_UPDATE_INTERVAL_DAYS,
+    MIN_UPDATE_INTERVAL_DAYS,
 )
 from .identity import account_display_name
 
@@ -75,7 +79,10 @@ class GeorgiaNaturalGasConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,
                     },
-                    options={CONF_ACCOUNT_SELECTION: DEFAULT_ACCOUNT_SELECTION},
+                    options={
+                        CONF_ACCOUNT_SELECTION: DEFAULT_ACCOUNT_SELECTION,
+                        CONF_UPDATE_INTERVAL_DAYS: DEFAULT_UPDATE_INTERVAL_DAYS,
+                    },
                 )
 
         return self.async_show_form(
@@ -244,7 +251,17 @@ class GeorgiaNaturalGasOptionsFlow(OptionsFlowWithReload):
             {
                 vol.Required(CONF_ACCOUNT_SELECTION): SelectSelector(
                     SelectSelectorConfig(options=account_options)
-                )
+                ),
+                vol.Required(
+                    CONF_UPDATE_INTERVAL_DAYS,
+                    default=DEFAULT_UPDATE_INTERVAL_DAYS,
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(
+                        min=MIN_UPDATE_INTERVAL_DAYS,
+                        max=MAX_UPDATE_INTERVAL_DAYS,
+                    ),
+                ),
             }
         )
 
@@ -256,7 +273,11 @@ class GeorgiaNaturalGasOptionsFlow(OptionsFlowWithReload):
                     CONF_ACCOUNT_SELECTION: self.config_entry.options.get(
                         CONF_ACCOUNT_SELECTION,
                         DEFAULT_ACCOUNT_SELECTION,
-                    )
+                    ),
+                    CONF_UPDATE_INTERVAL_DAYS: self.config_entry.options.get(
+                        CONF_UPDATE_INTERVAL_DAYS,
+                        DEFAULT_UPDATE_INTERVAL_DAYS,
+                    ),
                 },
             ),
         )

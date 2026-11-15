@@ -19,10 +19,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING
 from .coordinator import GeorgiaNaturalGasCoordinator
 from .models import BillingRecord
-from .statistics import build_daily_consumption_statistics
+from .price_plan import PricePlanPeriod
+from .statistics import (
+    build_daily_consumption_statistics,
+    build_daily_cost_statistics,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -32,7 +36,12 @@ class GNGSensorDescription(SensorEntityDescription):
     value_fn: Callable[
         [BillingRecord],
         str | int | float | Decimal | date | None,
-    ]
+    ] | None = None
+    price_plan_value_fn: Callable[
+        [PricePlanPeriod],
+        str | int | float | Decimal | date | None,
+    ] | None = None
+    requires_price_plan: bool = False
 
 
 SENSORS: tuple[GNGSensorDescription, ...] = (
@@ -125,6 +134,51 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfEnergy.THERM,
         suggested_display_precision=3,
         value_fn=lambda record: record.gas_used_therms,
+    ),
+    GNGSensorDescription(
+        key="gas_service_cost",
+        name="Gas Service Cost",
+        icon="mdi:cash-multiple",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+    ),
+    GNGSensorDescription(
+        key="actual_bill_charges",
+        name="Actual Bill Charges",
+        icon="mdi:receipt",
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+        price_plan_value_fn=lambda record: record.actual_bill_charges,
+        requires_price_plan=True,
+    ),
+    GNGSensorDescription(
+        key="budget_billing_installment",
+        name="Budget Billing Installment",
+        icon="mdi:calendar-month",
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+        price_plan_value_fn=lambda record: record.installment_amount,
+        requires_price_plan=True,
+    ),
+    GNGSensorDescription(
+        key="monthly_budget_variance",
+        name="Monthly Budget Variance",
+        icon="mdi:chart-line-variant",
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+        price_plan_value_fn=lambda record: record.monthly_variance,
+        requires_price_plan=True,
+    ),
+    GNGSensorDescription(
+        key="accumulated_budget_variance",
+        name="Accumulated Budget Variance",
+        icon="mdi:chart-timeline-variant",
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+        price_plan_value_fn=lambda record: record.accumulated_variance,
+        requires_price_plan=True,
     ),
     GNGSensorDescription(
         key="meter_reading",
@@ -231,10 +285,57 @@ class GNGSensor(
         await super().async_added_to_hass()
         if self.entity_description.key == "gas_consumption":
             self.coordinator.import_gas_consumption_statistics(self.entity_id)
+        elif self.entity_description.key == "gas_service_cost":
+            self.coordinator.import_gas_service_cost_statistics(self.entity_id)
+
+    @property
+    def available(self) -> bool:
+        """Price Plan sensors stay unavailable when the plan is absent."""
+
+        if not super().available:
+            return False
+        if not self.entity_description.requires_price_plan:
+            return True
+        return (
+            self.coordinator.plan_capability == PLAN_CAPABILITY_BUDGET_BILLING
+            and bool(self.coordinator.price_plan_records)
+        )
 
     @property
     def native_value(self) -> str | int | float | Decimal | date | None:
-        """Return the latest billing-period value."""
+        """Return the latest billing-period or cumulative Energy value."""
+
+        if self.entity_description.key == "gas_consumption":
+            if not self.coordinator.data:
+                return None
+            statistics = build_daily_consumption_statistics(
+                self.coordinator.data,
+                timezone=dt_util.get_default_time_zone(),
+                as_of_date=dt_util.now().date(),
+            )
+            return statistics[-1]["state"] if statistics else 0
+
+        if self.entity_description.key == "gas_service_cost":
+            if not self.coordinator.data:
+                return None
+            statistics = build_daily_cost_statistics(
+                self.coordinator.data,
+                self.coordinator.cost_amounts_by_bill_date(),
+                timezone=dt_util.get_default_time_zone(),
+                as_of_date=dt_util.now().date(),
+            )
+            return statistics[-1]["state"] if statistics else 0
+
+        if self.entity_description.requires_price_plan:
+            if not self.coordinator.price_plan_records:
+                return None
+            latest_plan = max(
+                self.coordinator.price_plan_records,
+                key=lambda record: record.bill_date,
+            )
+            if self.entity_description.price_plan_value_fn is None:
+                return None
+            return self.entity_description.price_plan_value_fn(latest_plan)
 
         if not self.coordinator.data:
             return None
@@ -243,15 +344,8 @@ class GNGSensor(
             self.coordinator.data,
             key=lambda record: record.bill_date,
         )
-
-        if self.entity_description.key == "gas_consumption":
-            statistics = build_daily_consumption_statistics(
-                self.coordinator.data,
-                timezone=dt_util.get_default_time_zone(),
-                as_of_date=dt_util.now().date(),
-            )
-            return statistics[-1]["state"] if statistics else 0
-
+        if self.entity_description.value_fn is None:
+            return None
         return self.entity_description.value_fn(latest)
 
     @property
@@ -271,6 +365,7 @@ class GNGSensor(
             "billing_period_start": latest.bill_from_date.isoformat(),
             "billing_period_end": latest.bill_to_date.isoformat(),
             "days_of_service": latest.days_of_service,
+            "plan_capability": self.coordinator.plan_capability,
         }
         if self.entity_description.key == "gas_consumption":
             today = dt_util.now().date()
@@ -280,6 +375,26 @@ class GNGSensor(
                     "estimated_daily_allocation": True,
                     "estimated_through": yesterday.isoformat(),
                     "consumption_source": "GNG billed therms",
+                }
+            )
+        elif self.entity_description.key == "gas_service_cost":
+            today = dt_util.now().date()
+            yesterday = date.fromordinal(today.toordinal() - 1)
+            cost_source = self.coordinator.cost_sources_by_bill_date().get(
+                latest.bill_date,
+                "unknown",
+            )
+            attributes.update(
+                {
+                    "estimated_daily_allocation": True,
+                    "estimated_through": yesterday.isoformat(),
+                    "cost_source": cost_source,
+                    "latest_period_cost": str(
+                        self.coordinator.cost_amounts_by_bill_date().get(
+                            latest.bill_date,
+                            Decimal(0),
+                        )
+                    ),
                 }
             )
         return attributes
