@@ -72,22 +72,27 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             entry.data["username"],
             entry.data["password"],
         )
-        self.account_id = entry.options.get(
+        self.account_selection = entry.options.get(
             CONF_ACCOUNT_SELECTION,
             DEFAULT_ACCOUNT_SELECTION,
         )
 
+        # Keep the original storage key for the verified default selection so
+        # existing users retain their billing history without a schema migration.
+        storage_key = f"{DOMAIN}_{entry.entry_id}"
+        if self.account_selection != DEFAULT_ACCOUNT_SELECTION:
+            storage_key = f"{storage_key}_{self.account_selection}"
+
         self.store = Store(
             hass,
             STORAGE_VERSION,
-            f"{DOMAIN}_{entry.entry_id}",
+            storage_key,
         )
 
-        self.records_by_selection = {}
         self.records = []
 
     async def _async_setup(self) -> None:
-        """Load previously stored billing history."""
+        """Load previously stored billing history for the selected account."""
 
         try:
             stored = await self.store.async_load()
@@ -97,7 +102,6 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             ) from err
 
         if stored is None:
-            self.records_by_selection = {}
             self.records = []
             return
 
@@ -105,39 +109,15 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             if not isinstance(stored, dict):
                 raise TypeError("Stored data is not a dictionary.")
 
-            if "records_by_selection" in stored:
-                stored_by_account = stored["records_by_selection"]
+            records = stored.get("records")
 
-                if not isinstance(stored_by_account, dict):
-                    raise TypeError("Stored account history is not a dictionary.")
+            if not isinstance(records, list):
+                raise TypeError("Stored records are not a list.")
 
-                self.records_by_selection = {
-                    account_id: [
-                        deserialize_billing_record(record)
-                        for record in records
-                    ]
-                    for account_id, records in stored_by_account.items()
-                    if isinstance(account_id, str) and isinstance(records, list)
-                }
-
-                if len(self.records_by_selection) != len(stored_by_account):
-                    raise TypeError("Stored account history is invalid.")
-
-            else:
-                # Migrate the original single-account storage format.
-                records = stored.get("records")
-
-                if not isinstance(records, list):
-                    raise TypeError("Stored records are not a list.")
-
-                self.records_by_selection = {
-                    DEFAULT_ACCOUNT_SELECTION: [
-                        deserialize_billing_record(record)
-                        for record in records
-                    ]
-                }
-
-            self.records = self.records_by_selection.get(self.account_id, [])
+            self.records = [
+                deserialize_billing_record(record)
+                for record in records
+            ]
 
         except (KeyError, TypeError, ValueError, ArithmeticError) as err:
             _LOGGER.warning(
@@ -145,7 +125,6 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
                 "from the customer portal: %s",
                 err,
             )
-            self.records_by_selection = {}
             self.records = []
             return
 
@@ -180,7 +159,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             )
 
             csv_data = await self.client.download_billing_data(
-                account_numbers=[self.account_id],
+                account_numbers=[self.account_selection],
                 start_date=start_date,
                 end_date=end_date,
             )
@@ -223,24 +202,17 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             ) from err
 
         merged = merge_billing_records(
-            self.records_by_selection.get(self.account_id, []),
+            self.records,
             incoming,
         )
-        updated_records_by_selection = {
-            **self.records_by_selection,
-            self.account_id: merged,
-        }
 
         try:
             await self.store.async_save(
                 {
-                    "records_by_selection": {
-                        account_id: [
-                            serialize_billing_record(record)
-                            for record in records
-                        ]
-                        for account_id, records in updated_records_by_selection.items()
-                    }
+                    "records": [
+                        serialize_billing_record(record)
+                        for record in merged
+                    ]
                 }
             )
         except (HomeAssistantError, OSError, TypeError, ValueError) as err:
@@ -248,7 +220,6 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
                 f"Unable to save GNG billing history: {type(err).__name__}."
             ) from err
 
-        self.records_by_selection = updated_records_by_selection
         self.records = merged
 
         _LOGGER.info(
