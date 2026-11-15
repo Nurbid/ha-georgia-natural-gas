@@ -6,12 +6,14 @@ DOMAIN = "georgia_natural_gas"
 
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
-CONF_ACCOUNT_ID = "account_id"
+CONF_ACCOUNT_SELECTION = "account_selection"
 
 DEFAULT_SCAN_INTERVAL = timedelta(hours=24)
 
-# Verified against the GNG Detailed Billing Data export.
-DEFAULT_ACCOUNT_ID = "1"
-ACCOUNT_OPTIONS = [{"label": "Account 1", "value": DEFAULT_ACCOUNT_ID}]
+# Verified GNG export selection index; not the customer-facing account number.
+DEFAULT_ACCOUNT_SELECTION = "1"
+ACCOUNT_OPTIONS = [
+    {"label": "Account 1", "value": DEFAULT_ACCOUNT_SELECTION}
+]
 
 STORAGE_VERSION = 1
