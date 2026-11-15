@@ -6,8 +6,10 @@ from datetime import date
 from decimal import Decimal
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -111,6 +113,16 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         native_unit_of_measurement="USD",
         suggested_display_precision=2,
         value_fn=lambda record: record.amount_due,
+    ),
+    GNGSensorDescription(
+        key="gas_consumption",
+        name="Gas Consumption",
+        icon="mdi:fire",
+        device_class=SensorDeviceClass.GAS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement="CCF",
+        suggested_display_precision=0,
+        value_fn=lambda record: record.meter_reading,
     ),
     GNGSensorDescription(
         key="meter_reading",
