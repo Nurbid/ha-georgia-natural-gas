@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from collections.abc import Callable, Iterable
-from datetime import date, time, tzinfo
+from datetime import date, datetime, time, tzinfo
 from decimal import Decimal
 from hashlib import sha256
 
