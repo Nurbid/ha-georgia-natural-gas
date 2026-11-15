@@ -20,10 +20,13 @@ from .api import (
 )
 from .const import (
     ACCOUNT_OPTIONS,
+    CONF_ACCOUNT_NUMBER,
     CONF_ACCOUNT_SELECTION,
+    CONF_SERVICE_ADDRESS,
     DEFAULT_ACCOUNT_SELECTION,
     DOMAIN,
 )
+from .identity import account_display_name
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -225,10 +228,22 @@ class GeorgiaNaturalGasOptionsFlow(OptionsFlowWithReload):
                 data=user_input,
             )
 
+        account_number = self.config_entry.data.get(CONF_ACCOUNT_NUMBER)
+        address = self.config_entry.data.get(CONF_SERVICE_ADDRESS)
+        account_options = ACCOUNT_OPTIONS
+
+        if account_number:
+            account_options = [
+                {
+                    "label": account_display_name(account_number, address or ""),
+                    "value": DEFAULT_ACCOUNT_SELECTION,
+                }
+            ]
+
         schema = vol.Schema(
             {
                 vol.Required(CONF_ACCOUNT_SELECTION): SelectSelector(
-                    SelectSelectorConfig(options=ACCOUNT_OPTIONS)
+                    SelectSelectorConfig(options=account_options)
                 )
             }
         )
