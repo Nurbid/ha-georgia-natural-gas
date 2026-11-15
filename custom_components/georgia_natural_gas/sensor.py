@@ -12,15 +12,17 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import UnitOfEnergy, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import GeorgiaNaturalGasCoordinator
 from .models import BillingRecord
+from .statistics import build_daily_consumption_statistics
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -118,11 +120,11 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         key="gas_consumption",
         name="Gas Consumption",
         icon="mdi:fire",
-        device_class=SensorDeviceClass.GAS,
+        device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
-        native_unit_of_measurement="CCF",
-        suggested_display_precision=0,
-        value_fn=lambda record: record.meter_reading,
+        native_unit_of_measurement=UnitOfEnergy.THERM,
+        suggested_display_precision=3,
+        value_fn=lambda record: record.gas_used_therms,
     ),
     GNGSensorDescription(
         key="meter_reading",
@@ -223,6 +225,13 @@ class GNGSensor(
             manufacturer="Georgia Natural Gas",
         )
 
+    async def async_added_to_hass(self) -> None:
+        """Backfill daily estimates after Home Assistant assigns the entity ID."""
+
+        await super().async_added_to_hass()
+        if self.entity_description.key == "gas_consumption":
+            self.coordinator.import_gas_consumption_statistics(self.entity_id)
+
     @property
     def native_value(self) -> str | int | float | Decimal | date | None:
         """Return the latest billing-period value."""
@@ -234,6 +243,14 @@ class GNGSensor(
             self.coordinator.data,
             key=lambda record: record.bill_date,
         )
+
+        if self.entity_description.key == "gas_consumption":
+            statistics = build_daily_consumption_statistics(
+                self.coordinator.data,
+                timezone=dt_util.get_default_time_zone(),
+                as_of_date=dt_util.now().date(),
+            )
+            return statistics[-1]["state"] if statistics else 0
 
         return self.entity_description.value_fn(latest)
 
@@ -249,9 +266,19 @@ class GNGSensor(
             key=lambda record: record.bill_date,
         )
 
-        return {
+        attributes = {
             "bill_date": latest.bill_date.isoformat(),
             "billing_period_start": latest.bill_from_date.isoformat(),
             "billing_period_end": latest.bill_to_date.isoformat(),
             "days_of_service": latest.days_of_service,
         }
+        if self.entity_description.key == "gas_consumption":
+            yesterday = date.fromordinal(date.today().toordinal() - 1)
+            attributes.update(
+                {
+                    "estimated_daily_allocation": True,
+                    "estimated_through": yesterday.isoformat(),
+                    "consumption_source": "GNG billed therms",
+                }
+            )
+        return attributes
