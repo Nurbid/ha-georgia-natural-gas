@@ -273,7 +273,8 @@ class GNGSensor(
             "days_of_service": latest.days_of_service,
         }
         if self.entity_description.key == "gas_consumption":
-            yesterday = date.fromordinal(date.today().toordinal() - 1)
+            today = dt_util.now().date()
+            yesterday = date.fromordinal(today.toordinal() - 1)
             attributes.update(
                 {
                     "estimated_daily_allocation": True,
