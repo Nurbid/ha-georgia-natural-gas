@@ -20,8 +20,8 @@ from .api import (
 )
 from .const import (
     ACCOUNT_OPTIONS,
-    CONF_ACCOUNT_ID,
-    DEFAULT_ACCOUNT_ID,
+    CONF_ACCOUNT_SELECTION,
+    DEFAULT_ACCOUNT_SELECTION,
     DOMAIN,
 )
 
@@ -72,7 +72,7 @@ class GeorgiaNaturalGasConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_USERNAME: username,
                         CONF_PASSWORD: password,
                     },
-                    options={CONF_ACCOUNT_ID: DEFAULT_ACCOUNT_ID},
+                    options={CONF_ACCOUNT_SELECTION: DEFAULT_ACCOUNT_SELECTION},
                 )
 
         return self.async_show_form(
@@ -227,7 +227,7 @@ class GeorgiaNaturalGasOptionsFlow(OptionsFlowWithReload):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_ACCOUNT_ID): SelectSelector(
+                vol.Required(CONF_ACCOUNT_SELECTION): SelectSelector(
                     SelectSelectorConfig(options=ACCOUNT_OPTIONS)
                 )
             }
@@ -238,9 +238,9 @@ class GeorgiaNaturalGasOptionsFlow(OptionsFlowWithReload):
             data_schema=self.add_suggested_values_to_schema(
                 schema,
                 {
-                    CONF_ACCOUNT_ID: self.config_entry.options.get(
-                        CONF_ACCOUNT_ID,
-                        DEFAULT_ACCOUNT_ID,
+                    CONF_ACCOUNT_SELECTION: self.config_entry.options.get(
+                        CONF_ACCOUNT_SELECTION,
+                        DEFAULT_ACCOUNT_SELECTION,
                     )
                 },
             ),
