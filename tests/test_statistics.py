@@ -188,3 +188,22 @@ def test_daily_statistics_do_not_include_current_day() -> None:
     )
 
     assert statistics[-1]["start"].date() == date(2026, 10, 26)
+
+
+def test_daily_allocation_preserves_decimal_total_exactly() -> None:
+    """The final day absorbs rounding residue instead of losing billed therms."""
+    record = replace(
+        _record(),
+        bill_from_date=date(2026, 1, 1),
+        bill_to_date=date(2026, 1, 4),
+        days_of_service=3,
+        gas_used_therms=Decimal("10.000"),
+    )
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 1, 5),
+    )
+
+    assert statistics[-1]["sum"] == 10.0
