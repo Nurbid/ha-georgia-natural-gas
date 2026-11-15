@@ -1,4 +1,3 @@
-
 """Sensor platform for Georgia Natural Gas."""
 
 from collections.abc import Callable
@@ -202,9 +201,13 @@ class GNGSensor(
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
 
+        device_name = "Georgia Natural Gas"
+        if coordinator.service_address:
+            device_name = f"{device_name} • {coordinator.service_address}"
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
-            name="Georgia Natural Gas",
+            name=device_name,
             manufacturer="Georgia Natural Gas",
         )
 
