@@ -65,6 +65,7 @@ from .statistics import (
     build_external_service_cost_statistics,
     build_external_statistics,
 )
+from .storage import migrate_storage_data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,6 +110,20 @@ def update_interval_from_options(options) -> timedelta:
     return timedelta(days=days)
 
 
+class GNGStore(Store):
+    """Home Assistant store with GNG schema migrations."""
+
+    async def _async_migrate_func(
+        self,
+        old_major_version: int,
+        old_minor_version: int,
+        old_data: dict | None,
+    ) -> dict:
+        """Migrate stored data when STORAGE_VERSION increases."""
+
+        return migrate_storage_data(old_major_version, old_data)
+
+
 class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
     """Manage GNG billing data and historical storage."""
 
@@ -151,7 +166,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         if self.account_selection != DEFAULT_ACCOUNT_SELECTION:
             storage_key = f"{storage_key}_{self.account_selection}"
 
-        self.store = Store(
+        self.store = GNGStore(
             hass,
             STORAGE_VERSION,
             storage_key,
