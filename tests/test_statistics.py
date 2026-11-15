@@ -6,7 +6,10 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from custom_components.georgia_natural_gas.models import parse_billing_csv
-from custom_components.georgia_natural_gas.statistics import build_external_statistics
+from custom_components.georgia_natural_gas.statistics import (
+    build_daily_consumption_statistics,
+    build_external_statistics,
+)
 
 
 HEADER = (
@@ -129,3 +132,59 @@ def test_account_numbers_are_not_exposed_in_statistic_ids() -> None:
 
     assert record.account_number not in metadata["statistic_id"]
     assert metadata["source"] == "georgia_natural_gas"
+
+
+def test_daily_statistics_preserve_billed_therms() -> None:
+    """Daily estimates sum exactly to the reported billing-period therms."""
+    record = _record()
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert len(statistics) == record.days_of_service == 32
+    assert statistics[0]["start"].date() == date(2026, 9, 25)
+    assert statistics[-1]["start"].date() == date(2026, 10, 26)
+    assert statistics[-1]["sum"] == 15.54
+    assert statistics[-1]["state"] == 15.54
+
+
+def test_daily_statistics_project_after_latest_bill_through_yesterday() -> None:
+    """The latest billing-period average estimates completed days after the bill."""
+    first = _record()
+    second = replace(
+        first,
+        bill_date=date(2026, 12, 3),
+        bill_from_date=date(2026, 10, 26),
+        bill_to_date=date(2026, 11, 26),
+        days_of_service=31,
+        meter_reading=8577,
+        gas_used_therms=Decimal("20.000"),
+    )
+
+    statistics = build_daily_consumption_statistics(
+        [first, second],
+        timezone=TZ,
+        as_of_date=date(2026, 11, 29),
+    )
+
+    assert len(statistics) == 32 + 31 + 2
+    assert statistics[-1]["start"].date() == date(2026, 11, 28)
+    assert statistics[-1]["sum"] == float(
+        Decimal("15.540") + Decimal("20.000") + (Decimal("20.000") / 31 * 2)
+    )
+
+
+def test_daily_statistics_do_not_include_current_day() -> None:
+    """The in-progress day is not prematurely counted as a full day."""
+    record = _record()
+
+    statistics = build_daily_consumption_statistics(
+        [record],
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert statistics[-1]["start"].date() == date(2026, 10, 26)
