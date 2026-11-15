@@ -55,6 +55,7 @@ def build_external_statistics(
             for end_date in sorted(records_by_end_date)
         ]
 
+        address = ordered[-1].address
         suffix = (entry_id, account_number)
         result.extend(
             [
@@ -62,7 +63,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_consumption",
                         suffix,
-                        "Georgia Natural Gas consumption",
+                        f"Georgia Natural Gas • Monthly consumption • {address}",
                         "CCF",
                         "volume",
                     ),
@@ -72,7 +73,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_usage_therms",
                         suffix,
-                        "Georgia Natural Gas usage (therms)",
+                        f"Georgia Natural Gas • Therm usage • {address}",
                         "thm",
                         None,
                     ),
@@ -86,7 +87,7 @@ def build_external_statistics(
                     _metadata(
                         "gas_charges_usd",
                         suffix,
-                        "Georgia Natural Gas gas charges",
+                        f"Georgia Natural Gas • Gas charges • {address}",
                         "USD",
                         None,
                     ),
