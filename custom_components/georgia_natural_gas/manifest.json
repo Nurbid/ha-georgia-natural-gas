@@ -1,6 +1,9 @@
 {
   "domain": "georgia_natural_gas",
   "name": "Georgia Natural Gas",
+  "after_dependencies": [
+    "recorder"
+  ],
   "categories": [
     "energy.meters_monitoring"
   ],
