@@ -7,6 +7,8 @@ DOMAIN = "georgia_natural_gas"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_ACCOUNT_SELECTION = "account_selection"
+CONF_ACCOUNT_NUMBER = "account_number"
+CONF_SERVICE_ADDRESS = "service_address"
 
 DEFAULT_SCAN_INTERVAL = timedelta(hours=24)
 
