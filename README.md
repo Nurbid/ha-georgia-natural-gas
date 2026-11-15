@@ -87,38 +87,11 @@ series in CCF and can be selected as a gas source:
 
 The CCF series is derived from consecutive cumulative meter readings. GNG's
 export provides the meter reading and therm usage for each billing period;
-the meter reading is interpreted as CCF, consistent with GNG's bill
-explanation. The first available reading is used as the baseline because the
-export does not include a preceding reading from which to calculate that
-first period's CCF consumption.
-
-GNG does not provide daily or hourly consumption. Each imported data point is
-timestamped at the end of its billing period, so Home Assistant attributes the
-period's usage to that date rather than inventing a daily distribution. This
-is the highest temporal resolution the source data supports.
-
-Separate historical statistics are also imported for billed therm usage and
-gas charges (excluding taxes). They are intended for Statistics Graph cards
-and are not gas-volume sources for the Energy dashboard. Existing statistics
-are updated by timestamp on every refresh, so corrections and new bills are
-backfilled without duplicating points.
-
-## Home Assistant Energy dashboard
-
-The integration imports historical statistics directly into Home Assistant's
-Recorder. The **Georgia Natural Gas consumption** statistic is a gas-volume
-series in CCF and can be selected as a gas source:
-
-1. Open **Settings → Dashboards → Energy**.
-2. Under **Gas consumption**, select **Add gas source**.
-3. Select **Georgia Natural Gas consumption** and save.
-
-The CCF series is derived from consecutive cumulative meter readings. GNG's
-export provides the meter reading and therm usage for each billing period;
-the meter reading is interpreted as CCF, consistent with GNG's bill
-explanation. The first available reading is used as the baseline because the
-export does not include a preceding reading from which to calculate that
-first period's CCF consumption.
+the meter reading is interpreted as CCF. This interpretation is supported by
+the supplied billing history: a 15 CCF meter-reading increase corresponds to
+15.540 billed therms (a 1.036 therm/CCF factor). The first available reading
+is used as the baseline because the export does not include a preceding
+reading from which to calculate that first period's CCF consumption.
 
 GNG does not provide daily or hourly consumption. Each imported data point is
 timestamped at the end of its billing period, so Home Assistant attributes the
