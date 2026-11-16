@@ -56,6 +56,7 @@ The integration creates sensors for the latest available billing record:
 |---|---|
 | Gas Consumption | Cumulative therms, with estimated daily allocation for Energy |
 | Gas Service Cost | Cumulative actual service cost (USD) for Energy cost tracking |
+| Period Service Cost | Latest bill's actual service cost (Gas+Tax+Other+Promo, or Price Plan actual) |
 | Actual Bill Charges | Latest Price Plan actual charges (budget billing accounts) |
 | Budget Billing Installment | Latest Price Plan installment amount |
 | Monthly Budget Variance | Latest Price Plan monthly variance (actual − installment) |
@@ -80,7 +81,7 @@ The integration creates sensors for the latest available billing record:
 
 **Important:** GNG provides consumption totals for billing periods, not daily meter readings. The **Gas Consumption** Energy sensor therefore estimates daily usage by distributing each bill's actual therm total evenly across its service days. After the latest bill period, it projects the latest daily average through the previous day. These are estimates, not measured daily readings. When a new bill arrives, the integration replaces the estimate for that billing period with a distribution based on the newly reported total.
 
-Also, **Amount Due** reflects the amount GNG reports as due (which may be a budget-billing amount); it should not be interpreted as the gas-only charge. Use **Gas Service Cost** / **Actual Bill Charges** for Energy cost tracking, and **Gas Charges** for commodity charges excluding taxes.
+Also, **Amount Due** reflects the amount GNG reports as due (which may be a budget-billing amount); it should not be interpreted as the gas-only charge. Use **Period Service Cost** for the latest bill's actual charge total, **Gas Service Cost** for Energy cumulative cost tracking, and **Gas Charges** for commodity charges excluding taxes.
 
 ## Home Assistant Energy dashboard
 

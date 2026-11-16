@@ -21,7 +21,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING, SHORT_NAME, LONG_NAME
 from .coordinator import GeorgiaNaturalGasCoordinator
 from .models import BillingRecord
-from .price_plan import PricePlanPeriod
+from .price_plan import PricePlanPeriod, latest_period_service_cost
 from .statistics import (
     build_daily_consumption_statistics,
     build_daily_cost_statistics,
@@ -140,6 +140,14 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         key="gas_service_cost",
         name="Gas Service Cost",
         icon="mdi:cash-multiple",
+        device_class=SensorDeviceClass.MONETARY,
+        native_unit_of_measurement="USD",
+        suggested_display_precision=2,
+    ),
+    GNGSensorDescription(
+        key="period_service_cost",
+        name="Period Service Cost",
+        icon="mdi:cash-plus",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement="USD",
         suggested_display_precision=2,
@@ -317,6 +325,15 @@ class GNGSensor(
             )
             return statistics[-1]["state"] if statistics else 0
 
+        if self.entity_description.key == "period_service_cost":
+            if not self.coordinator.data:
+                return None
+            latest_cost = latest_period_service_cost(
+                self.coordinator.data,
+                self.coordinator.price_plan_records,
+            )
+            return None if latest_cost is None else latest_cost[0]
+
         if self.entity_description.requires_price_plan:
             if not self.coordinator.price_plan_records:
                 return None
@@ -388,4 +405,10 @@ class GNGSensor(
                     ),
                 }
             )
+        elif self.entity_description.key == "period_service_cost":
+            cost_source = self.coordinator.cost_sources_by_bill_date().get(
+                latest.bill_date,
+                "unknown",
+            )
+            attributes["cost_source"] = cost_source
         return attributes

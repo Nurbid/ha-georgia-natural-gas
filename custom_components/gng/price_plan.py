@@ -235,3 +235,21 @@ def build_cost_by_bill_date(
         )
 
     return costs
+
+
+def latest_period_service_cost(
+    billing_records: list[BillingRecord],
+    price_plan_records: list[PricePlanPeriod],
+) -> tuple[Decimal, str] | None:
+    """Return (amount, source) for the latest bill's actual service cost.
+
+    This is the dashboard total for Gas+Tax+Other+Promo (or Price Plan
+    Actual Bill Charges when that export is available).
+    """
+
+    if not billing_records:
+        return None
+
+    costs = build_cost_by_bill_date(billing_records, price_plan_records)
+    latest = max(billing_records, key=lambda record: record.bill_date)
+    return costs.get(latest.bill_date)
