@@ -8,6 +8,8 @@ from zoneinfo import ZoneInfo
 from custom_components.gng.models import parse_billing_csv
 from custom_components.gng.statistics import (
     build_daily_consumption_statistics,
+    build_external_daily_consumption_statistics,
+    build_external_daily_cost_statistics,
     build_external_statistics,
 )
 
@@ -207,3 +209,65 @@ def test_daily_allocation_preserves_decimal_total_exactly() -> None:
     )
 
     assert statistics[-1]["sum"] == 10.0
+
+
+def test_daily_statistics_start_at_local_midnight() -> None:
+    """Daily Energy rows use hour 0 so they align with recorder day buckets."""
+    statistics = build_daily_consumption_statistics(
+        [_record()],
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert statistics[0]["start"].hour == 0
+    assert statistics[0]["start"].minute == 0
+    assert statistics[-1]["start"].hour == 0
+
+
+def test_external_daily_consumption_uses_gng_source_not_recorder() -> None:
+    """Energy daily therms are external stats so the recorder cannot dual-write."""
+    record = _record()
+
+    series = build_external_daily_consumption_statistics(
+        [record],
+        entry_id="test-entry-id",
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert len(series) == 1
+    metadata, stats = series[0]
+    assert metadata["source"] == "gng"
+    assert metadata["statistic_id"].startswith(
+        "gng:estimated_daily_consumption_"
+    )
+    assert metadata["unit_of_measurement"] == "thm"
+    assert metadata["unit_class"] == "energy"
+    assert metadata["has_sum"] is True
+    assert "Estimated daily consumption" in metadata["name"]
+    assert stats[-1]["sum"] == 15.54
+    assert stats[-1]["start"].hour == 0
+
+
+def test_external_daily_cost_uses_gng_source_not_recorder() -> None:
+    """Energy daily cost is external so entity state_class cannot reset sum."""
+    record = _record()
+    costs = {record.bill_date: Decimal("85.21")}
+
+    series = build_external_daily_cost_statistics(
+        [record],
+        costs,
+        entry_id="test-entry-id",
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )
+
+    assert len(series) == 1
+    metadata, stats = series[0]
+    assert metadata["source"] == "gng"
+    assert metadata["statistic_id"].startswith(
+        "gng:estimated_daily_service_cost_"
+    )
+    assert metadata["unit_of_measurement"] == "USD"
+    assert metadata["unit_class"] is None
+    assert round(stats[-1]["sum"], 2) == 85.21

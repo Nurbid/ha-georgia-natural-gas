@@ -14,7 +14,7 @@ PLATFORMS = [Platform.SENSOR]
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-) -> None:
+) -> bool:
     """Set up GNG from a config entry."""
 
     coordinator = GeorgiaNaturalGasCoordinator(
@@ -24,6 +24,7 @@ async def async_setup_entry(
     )
 
     await coordinator.async_config_entry_first_refresh()
+    coordinator.async_start_daily_estimate_tick()
 
     entry.runtime_data = coordinator
 
@@ -31,15 +32,20 @@ async def async_setup_entry(
         entry,
         PLATFORMS,
     )
+    return True
 
 
 async def async_unload_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-) -> None:
+) -> bool:
     """Unload GNG."""
+
+    coordinator = entry.runtime_data
+    coordinator.async_stop_daily_estimate_tick()
 
     await hass.config_entries.async_unload_platforms_or_raise(
         entry,
         PLATFORMS,
     )
+    return True

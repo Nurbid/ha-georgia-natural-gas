@@ -9,7 +9,6 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy, UnitOfTemperature
@@ -130,7 +129,9 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         name="Gas Consumption",
         icon="mdi:fire",
         device_class=SensorDeviceClass.ENERGY,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        # No state_class: Energy uses external gng:* daily statistics. A
+        # total_increasing state_class would make the recorder dual-write the
+        # sensor statistic ID and reset sum (negative Energy spikes).
         native_unit_of_measurement=UnitOfEnergy.THERM,
         suggested_display_precision=3,
         value_fn=lambda record: record.gas_used_therms,
@@ -140,7 +141,6 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
         name="Gas Service Cost",
         icon="mdi:cash-multiple",
         device_class=SensorDeviceClass.MONETARY,
-        state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement="USD",
         suggested_display_precision=2,
     ),
@@ -278,15 +278,6 @@ class GNGSensor(
             name=device_name,
             manufacturer=LONG_NAME,
         )
-
-    async def async_added_to_hass(self) -> None:
-        """Backfill daily estimates after Home Assistant assigns the entity ID."""
-
-        await super().async_added_to_hass()
-        if self.entity_description.key == "gas_consumption":
-            self.coordinator.import_gas_consumption_statistics(self.entity_id)
-        elif self.entity_description.key == "gas_service_cost":
-            self.coordinator.import_gas_service_cost_statistics(self.entity_id)
 
     @property
     def available(self) -> bool:
