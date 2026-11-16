@@ -25,5 +25,13 @@ def test_builds_account_and_service_address_label() -> None:
     """The account selector and config entry use both identity fields."""
     assert (
         account_display_name("5550022402024212", "123 Some Street")
-        == "555002240-2024212 • 123 Some Street"
+        == "GNG • 555002240-2024212 • 123 Some Street"
+    )
+
+
+def test_builds_account_label_without_address() -> None:
+    """Missing address still keeps the GNG short-name prefix."""
+    assert (
+        account_display_name("5550022402024212", "")
+        == "GNG • 555002240-2024212"
     )

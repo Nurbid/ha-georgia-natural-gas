@@ -2,6 +2,8 @@
 
 import re
 
+from .const import SHORT_NAME
+
 
 def format_account_number(account_number: str) -> str:
     """Format a 16-digit GNG account number as 9-7 digits."""
@@ -17,4 +19,6 @@ def format_account_number(account_number: str) -> str:
 def account_display_name(account_number: str, address: str) -> str:
     """Return the customer-facing account and service-address label."""
     number = format_account_number(account_number)
-    return f"{number} • {address}" if address else number
+    if address:
+        return f"{SHORT_NAME} • {number} • {address}"
+    return f"{SHORT_NAME} • {number}"

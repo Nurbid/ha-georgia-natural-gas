@@ -14,7 +14,7 @@
         }
       },
       "reconfigure": {
-        "title": "Reconfigure GNG",
+        "title": "Reconfigure Georgia Natural Gas",
         "description": "Update the username and password used to access your GNG account.",
         "data": {
           "username": "Username",
@@ -26,7 +26,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "Reauthenticate with GNG",
+        "title": "Reauthenticate with Georgia Natural Gas",
         "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
         "data": {
           "password": "Password"
@@ -48,15 +48,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "GNG options",
+        "title": "Georgia Natural Gas options",
         "description": "Choose the GNG account and how often billing data should be refreshed. After the first full history download, subsequent updates request only the current bill plus Price Plan history.",
         "data": {
           "account_selection": "GNG account selection",
           "update_interval_days": "Update interval (days)"
         },
         "data_description": {
-          "account_selection": "Portal account selection used for billing exports. Multi-account discovery is not available yet.",
-          "update_interval_days": "How often to poll the GNG portal after the initial history seed (1–30 days). Default is 7."
+          "account_selection": "Portal account selection used for billing exports. (Multi-account discovery is not available yet.)",
+          "update_interval_days": "How often to poll the GNG portal after the initial history seed (7–30 days). Default is 14."
         }
       }
     }

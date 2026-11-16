@@ -276,7 +276,7 @@ class GNGSensor(
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=device_name,
-            manufacturer=SHORT_NAME,
+            manufacturer=LONG_NAME,
         )
 
     async def async_added_to_hass(self) -> None:
