@@ -35,9 +35,9 @@ BillingRecord store  +  PricePlanPeriod store
        ↓
 Reconcile by Bill Date → actual_service_cost per period
        ↓
-Sensors: gas_consumption (thm) + gas_service_cost (USD)
+Sensors: gas_consumption (thm) + gas_service_cost (USD) — display only
        ↓
-async_import_statistics (daily estimated series under each entity_id)
+async_add_external_statistics (gng:estimated_daily_* ; no recorder dual-write)
 ```
 
 ## Authoritative fields

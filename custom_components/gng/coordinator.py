@@ -9,13 +9,13 @@ from decimal import Decimal
 import aiohttp
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
-    async_import_statistics,
 )
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
     HomeAssistantError,
 )
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -61,8 +61,8 @@ from .price_plan import (
     serialize_price_plan_period,
 )
 from .statistics import (
-    build_daily_consumption_statistics,
-    build_daily_cost_statistics,
+    build_external_daily_consumption_statistics,
+    build_external_daily_cost_statistics,
     build_external_service_cost_statistics,
     build_external_statistics,
 )
@@ -176,8 +176,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         self.records = []
         self.price_plan_records = []
         self.plan_capability = PLAN_CAPABILITY_UNKNOWN
-        self.gas_consumption_entity_id = None
-        self.gas_service_cost_entity_id = None
+        self._unsub_daily_estimate_tick = None
 
     def cost_amounts_by_bill_date(self) -> dict[date, Decimal]:
         """Return reconciled actual service costs keyed by bill date."""
@@ -201,80 +200,71 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
             ).items()
         }
 
-    def import_gas_consumption_statistics(self, entity_id: str) -> None:
-        """Import daily estimates under the Energy sensor's native statistic ID."""
+    def publish_daily_energy_statistics(self) -> None:
+        """Publish estimated daily Energy series as external statistics only.
+
+        Entity ``sensor.*`` statistic IDs must not be written here. Sensors with
+        ``state_class`` would also be compiled by the recorder, and that
+        dual-writer pattern resets ``sum`` (large negative Energy spikes).
+        """
 
         if not self.records:
             return
 
-        self.gas_consumption_entity_id = entity_id
+        timezone = dt_util.get_default_time_zone()
+        as_of_date = dt_util.now().date()
         try:
-            statistics = build_daily_consumption_statistics(
+            for metadata, statistics in build_external_daily_consumption_statistics(
                 self.records,
-                timezone=dt_util.get_default_time_zone(),
-                as_of_date=dt_util.now().date(),
-            )
-            if not statistics:
-                return
-
-            async_import_statistics(
-                self.hass,
-                {
-                    "statistic_id": entity_id,
-                    "source": "recorder",
-                    "name": (
-                        f"{SHORT_NAME} • Estimated daily consumption"
-                        + (f" • {self.service_address}" if self.service_address else "")
-                    ),
-                    "unit_of_measurement": "thm",
-                    "unit_class": "energy",
-                    "has_sum": True,
-                    "mean_type": 0,
-                },
-                statistics,
-            )
-        except (HomeAssistantError, ValueError):
-            _LOGGER.exception(
-                "Unable to import estimated daily GNG consumption statistics."
-            )
-
-    def import_gas_service_cost_statistics(self, entity_id: str) -> None:
-        """Import daily cost estimates under the Energy cost sensor statistic ID."""
-
-        if not self.records:
-            return
-
-        self.gas_service_cost_entity_id = entity_id
-        try:
-            statistics = build_daily_cost_statistics(
+                entry_id=self.entry_id,
+                timezone=timezone,
+                as_of_date=as_of_date,
+            ):
+                async_add_external_statistics(self.hass, metadata, statistics)
+            for metadata, statistics in build_external_daily_cost_statistics(
                 self.records,
                 self.cost_amounts_by_bill_date(),
-                timezone=dt_util.get_default_time_zone(),
-                as_of_date=dt_util.now().date(),
-            )
-            if not statistics:
-                return
-
-            async_import_statistics(
-                self.hass,
-                {
-                    "statistic_id": entity_id,
-                    "source": "recorder",
-                    "name": (
-                        f"{SHORT_NAME} • Estimated daily service cost"
-                        + (f" • {self.service_address}" if self.service_address else "")
-                    ),
-                    "unit_of_measurement": "USD",
-                    "unit_class": None,
-                    "has_sum": True,
-                    "mean_type": 0,
-                },
-                statistics,
-            )
+                entry_id=self.entry_id,
+                timezone=timezone,
+                as_of_date=as_of_date,
+            ):
+                async_add_external_statistics(self.hass, metadata, statistics)
         except (HomeAssistantError, ValueError):
             _LOGGER.exception(
-                "Unable to import estimated daily GNG service cost statistics."
+                "Unable to publish estimated daily GNG Energy statistics."
             )
+
+    def async_start_daily_estimate_tick(self) -> None:
+        """Advance daily Energy estimates at local midnight without polling GNG."""
+
+        if self._unsub_daily_estimate_tick is not None:
+            return
+
+        self._unsub_daily_estimate_tick = async_track_time_change(
+            self.hass,
+            self._async_daily_estimate_tick,
+            hour=0,
+            minute=5,
+            second=0,
+        )
+
+    def async_stop_daily_estimate_tick(self) -> None:
+        """Cancel the local midnight estimate tick."""
+
+        if self._unsub_daily_estimate_tick is None:
+            return
+        self._unsub_daily_estimate_tick()
+        self._unsub_daily_estimate_tick = None
+
+    async def _async_daily_estimate_tick(self, _now=None) -> None:
+        """Re-publish estimates through yesterday and refresh sensor states."""
+
+        if not self.records:
+            return
+
+        self.publish_daily_energy_statistics()
+        # Notify sensors without hitting the GNG portal.
+        self.async_set_updated_data(self.records)
 
     def _update_account_identity(self, records) -> None:
         """Persist the customer-facing account identity and update the entry title."""
@@ -532,14 +522,7 @@ class GeorgiaNaturalGasCoordinator(DataUpdateCoordinator):
         self.plan_capability = plan_capability
         self._update_account_identity(merged)
 
-        if self.gas_consumption_entity_id:
-            self.import_gas_consumption_statistics(
-                self.gas_consumption_entity_id
-            )
-        if self.gas_service_cost_entity_id:
-            self.import_gas_service_cost_statistics(
-                self.gas_service_cost_entity_id
-            )
+        self.publish_daily_energy_statistics()
 
         # Re-importing the complete series is intentional: Home Assistant
         # upserts statistics by timestamp, so this backfills new records and

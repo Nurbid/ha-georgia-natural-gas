@@ -84,24 +84,28 @@ Also, **Amount Due** reflects the amount GNG reports as due (which may be a budg
 
 ## Home Assistant Energy dashboard
 
-### Gas consumption
+Energy history is published as **external statistics** (`gng:estimated_daily_*`),
+not through the `sensor.*` recorder series. That avoids a dual-writer bug where
+Home Assistant's recorder resets `sum` on the same statistic ID and creates large
+negative Energy spikes.
 
-The **Gas Consumption** sensor is exposed with `device_class: energy`,
-`state_class: total_increasing`, and `thm` (therms), a unit supported by
-Home Assistant's gas-consumption source selector.
+The **Gas Consumption** / **Gas Service Cost** sensors remain for dashboards and
+more-info; they show the current cumulative estimate but are not the Energy
+source.
+
+### Gas consumption
 
 1. Open **Settings → Dashboards → Energy**.
 2. Under **Gas consumption**, select **Add gas source**.
-3. Select the GNG **Gas Consumption** sensor.
+3. Choose **statistic** / browse statistics and select
+   **GNG • Estimated daily consumption • …** (`gng:estimated_daily_consumption_…`).
 
 ### Gas cost
 
-The **Gas Service Cost** sensor is exposed with `device_class: monetary`,
-`state_class: total_increasing`, and `USD`. Use it with Energy's
-**Use an entity tracking the total costs** option.
-
-1. In the same gas source configuration, choose **Use an entity tracking the total costs**.
-2. Select **Gas Service Cost**.
+1. In the same gas source, set the cost to the statistic
+   **GNG • Estimated daily service cost • …**
+   (`gng:estimated_daily_service_cost_…`).
+2. Do **not** point Energy at the **Gas Service Cost** sensor entity.
 
 Cost values come from GNG Price Plan **Actual Bill Charges** when available.
 If Price Plan history is missing (non-budget accounts), the integration falls
@@ -115,15 +119,19 @@ that billing period. It then projects the latest daily average through
 yesterday until a newer bill arrives. The current day is not counted as a
 complete day. These are estimates, not measured daily meter or rate data.
 
-Historical daily statistics are imported using the exact statistic ID of each
-Energy sensor, so the backfilled history and the live sensor form one
-continuous Energy series. Re-imports update existing timestamps, allowing a
-new bill to replace the previous estimate for that period without duplicating
-statistics.
+Daily estimates are republished after each portal poll and again at local
+**00:05** without contacting GNG, so Energy keeps advancing between weekly
+polls. Re-publishes upsert by timestamp, so a new bill can replace earlier
+estimates for that period without duplicating rows.
 
-Separate historical statistics are also imported for billed therm usage, gas
-charges excluding taxes, and reconciled actual service cost. They are intended
-for Statistics Graph cards.
+Separate external statistics are also published for billed therm usage, gas
+charges excluding taxes, meter CCF, and reconciled actual service cost. They
+are intended for Statistics Graph cards.
+
+If you previously selected the **Gas Consumption** / **Gas Service Cost**
+sensors as Energy sources, remove them and add the `gng:estimated_daily_*`
+statistics above. Old sensor statistics may show a one-time negative spike from
+the recorder `sum` reset; the new external series are the supported path.
 
 ## Data and polling
 

@@ -22,6 +22,11 @@ def _billing_timestamp(value: date, timezone: tzinfo) -> datetime:
     return datetime.combine(value, time(hour=23), tzinfo=timezone)
 
 
+def _day_start_timestamp(value: date, timezone: tzinfo) -> datetime:
+    """Place daily Energy estimates at local midnight for the service day."""
+    return datetime.combine(value, time(hour=0), tzinfo=timezone)
+
+
 def build_external_statistics(
     records: Iterable[BillingRecord],
     *,
@@ -314,7 +319,7 @@ def _build_daily_amount_statistics(
         cumulative += daily_amount
         statistics.append(
             {
-                "start": _billing_timestamp(amount_date, timezone),
+                "start": _day_start_timestamp(amount_date, timezone),
                 "state": float(cumulative),
                 "sum": float(cumulative),
             }
@@ -357,3 +362,84 @@ def build_daily_cost_statistics(
         timezone=timezone,
         as_of_date=as_of_date,
     )
+
+
+def build_external_daily_consumption_statistics(
+    records: Iterable[BillingRecord],
+    *,
+    entry_id: str,
+    timezone: tzinfo,
+    as_of_date: date,
+) -> list[tuple[dict, list[dict]]]:
+    """Build external daily therm statistics for the Energy dashboard.
+
+    These use ``source=gng`` so Home Assistant's recorder is not a second
+    writer on the same statistic ID (which resets ``sum`` and creates large
+    negative Energy spikes).
+    """
+
+    ordered = _ordered_account_records(records)
+    if not ordered:
+        return []
+
+    statistics = build_daily_consumption_statistics(
+        ordered,
+        timezone=timezone,
+        as_of_date=as_of_date,
+    )
+    if not statistics:
+        return []
+
+    address = ordered[-1].address
+    account_number = ordered[-1].account_number
+    return [
+        (
+            _metadata(
+                "estimated_daily_consumption",
+                (entry_id, account_number),
+                f"{SHORT_NAME} • Estimated daily consumption • {address}",
+                "thm",
+                "energy",
+            ),
+            statistics,
+        )
+    ]
+
+
+def build_external_daily_cost_statistics(
+    records: Iterable[BillingRecord],
+    cost_by_bill_date: dict[date, Decimal],
+    *,
+    entry_id: str,
+    timezone: tzinfo,
+    as_of_date: date,
+) -> list[tuple[dict, list[dict]]]:
+    """Build external daily service-cost statistics for the Energy dashboard."""
+
+    ordered = _ordered_account_records(records)
+    if not ordered:
+        return []
+
+    statistics = build_daily_cost_statistics(
+        ordered,
+        cost_by_bill_date,
+        timezone=timezone,
+        as_of_date=as_of_date,
+    )
+    if not statistics:
+        return []
+
+    address = ordered[-1].address
+    account_number = ordered[-1].account_number
+    return [
+        (
+            _metadata(
+                "estimated_daily_service_cost",
+                (entry_id, account_number),
+                f"{SHORT_NAME} • Estimated daily service cost • {address}",
+                "USD",
+                None,
+            ),
+            statistics,
+        )
+    ]
