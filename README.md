@@ -15,7 +15,7 @@ This is an unofficial, community-maintained integration. It is not affiliated wi
 - Retains previously retrieved billing records locally across Home Assistant restarts.
 - Supports manual credential reconfiguration and automatic reauthentication.
 - Provides an account-selection setting; the current implementation exposes the verified default account while multi-account portal discovery is still under development.
-- Polls the portal every **7 days** by default (configurable, 1–30 days).
+- Polls the portal every **14 days** by default (configurable, 7–30 days).
 
 ## Installation
 
