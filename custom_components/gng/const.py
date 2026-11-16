@@ -4,9 +4,10 @@ from datetime import timedelta
 
 DOMAIN = "gng"
 
-# Display names use "GNG" only to identify the compatible utility portal
-# (nominative use). This project is unofficial and unaffiliated.
-INTEGRATION_NAME = "GNG (unofficial)"
+# Display names identify the compatible utility portal (nominative use).
+# This project is unofficial and unaffiliated.
+INTEGRATION_NAME = "Georgia Natural Gas (GNG) - Unofficial"
+LONG_NAME = "Georgia Natural Gas"
 SHORT_NAME = "GNG"
 MANUFACTURER = "Community"
 

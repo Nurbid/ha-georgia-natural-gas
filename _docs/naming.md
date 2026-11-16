@@ -2,11 +2,11 @@
 
 | Layer | Value |
 | --- | --- |
-| Integration title (HACS / Add Integration / `manifest.name`) | `GNG (unofficial)` |
+| Integration title (HACS / Add Integration / `manifest.name`) | `Georgia Natural Gas (GNG) - Unofficial` |
 | Domain / package / entity prefix | `gng` (`custom_components/gng/`, `sensor.gng_*`) |
-| Device / short display / stats prefix | `GNG` |
-| Device manufacturer | `Community` |
-| README identification of the utility | “Georgia Natural Gas (GNG)” only as the compatible service |
+| Device / short display / stats prefix | `GNG` (`SHORT_NAME`) |
+| Full utility name (docs / consts) | `Georgia Natural Gas` (`LONG_NAME`) |
+| Device manufacturer | `Community` (not the utility’s legal name) |
 
 Names identify the compatible customer portal. This project is unofficial and unaffiliated.
 

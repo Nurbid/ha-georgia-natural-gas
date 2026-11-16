@@ -1,4 +1,4 @@
-# GNG (unofficial)
+# Georgia Natural Gas (GNG) - Unofficial
 
 A custom [Home Assistant](https://www.home-assistant.io/) integration for customers of **Georgia Natural Gas (GNG)**. It retrieves billing history from the GNG customer portal and exposes usage and cost figures as Home Assistant sensors for the Energy dashboard.
 
@@ -38,16 +38,16 @@ If you need official account support, contact GNG — not the maintainers of thi
    `https://github.com/Nurbid/ha-georgia-natural-gas`
 
 4. Select **Integration** as the category and add the repository.
-5. Find **GNG (unofficial)** in HACS and download it.
+5. Find **Georgia Natural Gas (GNG) - Unofficial** in HACS and download it.
 6. Restart Home Assistant.
 7. Go to **Settings → Devices & services → Add integration**.
-8. Search for **GNG (unofficial)** and enter your GNG portal username and password.
+8. Search for **Georgia Natural Gas (GNG) - Unofficial** and enter your GNG portal username and password.
 
 ### Manual
 
 1. Copy the `custom_components/gng` directory into your Home Assistant `custom_components` directory.
 2. Restart Home Assistant.
-3. Add **GNG (unofficial)** from **Settings → Devices & services**.
+3. Add **Georgia Natural Gas (GNG) - Unofficial** from **Settings → Devices & services**.
 
 ## Configuration
 

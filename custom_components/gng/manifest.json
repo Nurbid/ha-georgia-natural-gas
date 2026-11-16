@@ -1,6 +1,6 @@
 {
   "domain": "gng",
-  "name": "GNG (unofficial)",
+  "name": "Georgia Natural Gas (GNG) - Unofficial",
   "after_dependencies": [
     "recorder"
   ],
