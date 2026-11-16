@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Georgia Natural Gas (GNG)",
-        "description": "Enter your GNG customer portal credentials.",
+        "title": "Connect to Georgia Natural Gas (GNG) - Unofficial",
+        "description": "Enter your Georgia Natural Gas customer portal credentials. This integration is unofficial and not affiliated with GNG.",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -14,7 +14,7 @@
         }
       },
       "reconfigure": {
-        "title": "Reconfigure Georgia Natural Gas",
+        "title": "Reconfigure Georgia Natural Gas (GNG) - Unofficial",
         "description": "Update the username and password used to access your GNG account.",
         "data": {
           "username": "Username",
@@ -26,7 +26,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "Reauthenticate with Georgia Natural Gas",
+        "title": "Reauthenticate with Georgia Natural Gas (GNG) - Unofficial",
         "description": "Your GNG credentials are no longer valid. Enter your current password to restore the connection.",
         "data": {
           "password": "Password"
@@ -41,14 +41,14 @@
     },
     "error": {
       "invalid_auth": "Authentication failed. Check your username and password.",
-      "cannot_connect": "Unable to connect to GNG.",
+      "cannot_connect": "Unable to connect to the GNG customer portal.",
       "unknown": "An unexpected error occurred. Check the Home Assistant logs."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Georgia Natural Gas options",
+        "title": "Georgia Natural Gas (GNG) - Unofficial options",
         "description": "Choose the GNG account and how often billing data should be refreshed. After the first full history download, subsequent updates request only the current bill plus Price Plan history.",
         "data": {
           "account_selection": "GNG account selection",

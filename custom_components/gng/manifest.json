@@ -1,6 +1,6 @@
 {
   "domain": "gng",
-  "name": "Georgia Natural Gas (GNG)",
+  "name": "Georgia Natural Gas (GNG) - Unofficial",
   "after_dependencies": [
     "recorder"
   ],
@@ -15,5 +15,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Nurbid/ha-georgia-natural-gas/issues",
   "requirements": [],
-  "version": "0.2.4"
+  "version": "0.2.5"
 }
