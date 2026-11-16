@@ -8,6 +8,7 @@ from custom_components.gng.price_plan import (
     build_cost_by_bill_date,
     detect_plan_capability,
     detailed_component_cost,
+    latest_period_service_cost,
     parse_price_plan_csv,
     resolve_actual_service_cost,
 )
@@ -119,3 +120,32 @@ def test_daily_cost_statistics_preserve_actual_total() -> None:
     assert len(statistics) == 32
     assert round(statistics[-1]["sum"], 2) == 85.21
     assert round(statistics[-1]["state"], 2) == 85.21
+
+
+def test_latest_period_service_cost_totals_detailed_components() -> None:
+    """Dashboard total uses Gas+Tax+Other+Promo when Price Plan is absent."""
+
+    billing = parse_billing_csv("\n".join((BILLING_HEADER, BILLING_ROW)))[0]
+
+    amount, source = latest_period_service_cost([billing], [])
+
+    assert amount == Decimal("85.21")
+    assert source == "detailed_components"
+
+
+def test_latest_period_service_cost_prefers_price_plan() -> None:
+    """Dashboard total prefers Price Plan actual charges when present."""
+
+    billing = parse_billing_csv("\n".join((BILLING_HEADER, BILLING_ROW)))[0]
+    price_plan = parse_price_plan_csv(PRICE_PLAN_CSV)
+
+    amount, source = latest_period_service_cost([billing], price_plan)
+
+    assert amount == Decimal("85.21")
+    assert source == "price_plan"
+
+
+def test_latest_period_service_cost_empty_history() -> None:
+    """No billing history yields no period total."""
+
+    assert latest_period_service_cost([], []) is None
