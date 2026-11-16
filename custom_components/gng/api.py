@@ -256,6 +256,12 @@ class GeorgiaNaturalGasClient:
 
                 content_type = response.headers.get("Content-Type", "")
 
+                if "text/csv" not in content_type.lower():
+                    raise GNGError(
+                        "Expected CSV but received unexpected content type: "
+                        f"{content_type or 'unspecified'}."
+                    )
+
                 try:
                     body = await response.text()
                 except UnicodeDecodeError:
@@ -282,13 +288,83 @@ class GeorgiaNaturalGasClient:
 
         return body, content_type
 
+    async def _get_portal_page(self, path: str) -> str:
+        """GET a portal HTML page and refresh Token/SitePrefix when present.
+
+        AuthLink spreadsheet exports (e.g. /EppHistorySpreadsheet) return an
+        HTML error page unless their portal page has been loaded first in the
+        same session.
+        """
+
+        if not self.authenticated:
+            raise GNGAuthenticationError("Not authenticated with GNG.")
+
+        if not self.session or self.session.closed:
+            raise GNGConnectionError("HTTP session is not available.")
+
+        url = urljoin(BASE_URL, path)
+
+        try:
+            async with self.session.get(url) as response:
+                if response.status in (401, 403):
+                    self.authenticated = False
+                    raise GNGAuthenticationError(
+                        f"GNG rejected portal page {path} "
+                        f"(HTTP {response.status})."
+                    )
+
+                if response.status != 200:
+                    raise GNGConnectionError(
+                        f"GNG portal page {path} failed "
+                        f"(HTTP {response.status})."
+                    )
+
+                if response.url.path.rstrip("/").lower() == "/login":
+                    self.authenticated = False
+                    raise GNGAuthenticationError(
+                        f"GNG redirected portal page {path} to login."
+                    )
+
+                try:
+                    html = await response.text()
+                except UnicodeDecodeError:
+                    raise GNGError(
+                        f"GNG portal page {path} returned invalid text "
+                        "encoding."
+                    ) from None
+
+        except TimeoutError:
+            raise GNGConnectionError(
+                f"GNG portal page {path} timed out."
+            ) from None
+
+        except aiohttp.ClientError as err:
+            raise GNGConnectionError(
+                f"Unable to load GNG portal page {path}: "
+                f"{type(err).__name__}."
+            ) from None
+
+        parser = TokenParser()
+        parser.feed(html)
+        page_token = parser.values.get("Token")
+        if page_token:
+            self.token = page_token
+        if "SitePrefix" in parser.values:
+            self.site_prefix = parser.values.get("SitePrefix", "")
+
+        return html
+
     async def download_price_plan_history(self):
         """Download Price Plan / budget-billing history CSV.
 
         Portal page: /BudgetBillingPlan
         Export: GET /EppHistorySpreadsheet?Token=&nr=1
+
+        The portal requires loading /BudgetBillingPlan in-session before the
+        spreadsheet export succeeds.
         """
 
+        await self._get_portal_page("/BudgetBillingPlan")
         csv_data, _content_type = await self.download_authlink_file(
             "/EppHistorySpreadsheet",
             referer="/BudgetBillingPlan",
