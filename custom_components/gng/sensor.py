@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING, SHORT_NAME
+from .const import DOMAIN, PLAN_CAPABILITY_BUDGET_BILLING, SHORT_NAME, LONG_NAME
 from .coordinator import GeorgiaNaturalGasCoordinator
 from .models import BillingRecord
 from .price_plan import PricePlanPeriod
@@ -276,7 +276,7 @@ class GNGSensor(
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name=device_name,
-            manufacturer=SHORT_NAME,
+            manufacturer=LONG_NAME,
         )
 
     async def async_added_to_hass(self) -> None:
