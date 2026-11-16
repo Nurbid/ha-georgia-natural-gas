@@ -136,6 +136,24 @@ def test_account_numbers_are_not_exposed_in_statistic_ids() -> None:
     assert metadata["source"] == "gng"
 
 
+def test_statistic_ids_are_lowercase_for_ulid_entry_ids() -> None:
+    """HA rejects external statistic_ids with uppercase (ULID entry ids)."""
+    record = _record()
+
+    metadata, _ = build_external_daily_consumption_statistics(
+        [record],
+        entry_id="01M7HPS6D3JJDVADQATFQJ4VEY",
+        timezone=TZ,
+        as_of_date=date(2026, 10, 27),
+    )[0]
+
+    statistic_id = metadata["statistic_id"]
+    assert statistic_id == statistic_id.lower()
+    assert statistic_id.startswith("gng:estimated_daily_consumption_")
+    assert "01M7" not in statistic_id
+    assert "01m7" in statistic_id
+
+
 def test_daily_statistics_preserve_billed_therms() -> None:
     """Daily estimates sum exactly to the reported billing-period therms."""
     record = _record()

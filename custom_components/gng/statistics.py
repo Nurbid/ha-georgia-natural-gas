@@ -11,9 +11,13 @@ from .models import BillingRecord
 
 
 def _statistic_id(metric: str, entry_id: str, account_number: str) -> str:
-    """Build a stable statistic ID without exposing the account number."""
+    """Build a stable statistic ID without exposing the account number.
+
+    Home Assistant requires external statistic_ids to be lowercase. Config
+    entry IDs are ULIDs with uppercase letters, so normalize here.
+    """
     account_hash = sha256(account_number.encode()).hexdigest()[:8]
-    entry_slug = entry_id.replace("-", "_")
+    entry_slug = entry_id.replace("-", "_").lower()
     return f"{DOMAIN}:{metric}_{entry_slug}_{account_hash}"
 
 
