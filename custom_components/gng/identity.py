@@ -16,6 +16,35 @@ def format_account_number(account_number: str) -> str:
     return value
 
 
+def account_selection_slug(account_selection: str) -> str:
+    """Stable slug for portal account selection (e.g. '1' → 'account1')."""
+
+    selection = str(account_selection).strip() or "1"
+    return f"account{selection}"
+
+
+def account_device_name(account_selection: str) -> str:
+    """Device name that slugs to sensor.gng_accountN_* entity ids."""
+
+    return f"{SHORT_NAME} {account_selection_slug(account_selection)}"
+
+
+def account_device_identifier(entry_id: str, account_selection: str) -> str:
+    """Stable device registry id segment for one service account."""
+
+    return f"{entry_id}_{account_selection_slug(account_selection)}"
+
+
+def account_entity_unique_id(
+    entry_id: str,
+    account_selection: str,
+    key: str,
+) -> str:
+    """Stable entity unique_id including account selection."""
+
+    return f"{entry_id}_{account_selection_slug(account_selection)}_{key}"
+
+
 def account_display_name(account_number: str, address: str) -> str:
     """Return the customer-facing account and service-address label."""
     number = format_account_number(account_number)

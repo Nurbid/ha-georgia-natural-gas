@@ -22,4 +22,4 @@ Future plan types should plug into the same capability + cost-resolver interface
 
 ## Multi-account stub
 
-Portal `AccountNumbers` selection remains `"1"`. Coordinator storage keys already namespace by selection for a future discovery UI.
+Portal `AccountNumbers` selection remains `"1"`. Coordinator storage keys already namespace by selection for a future discovery UI. Device / entity identity already includes `account{N}` — see [multi-account.md](multi-account.md).
