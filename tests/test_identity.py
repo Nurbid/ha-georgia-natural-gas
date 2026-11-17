@@ -1,7 +1,11 @@
 """Tests for GNG account identity presentation."""
 
 from custom_components.gng.identity import (
+    account_device_identifier,
+    account_device_name,
     account_display_name,
+    account_entity_unique_id,
+    account_selection_slug,
     format_account_number,
 )
 
@@ -34,4 +38,15 @@ def test_builds_account_label_without_address() -> None:
     assert (
         account_display_name("5550022402024212", "")
         == "GNG • 555002240-2024212"
+    )
+
+
+def test_account_selection_slug_and_device_name() -> None:
+    """Selection index becomes a stable accountN device/entity slug."""
+    assert account_selection_slug("1") == "account1"
+    assert account_device_name("1") == "GNG account1"
+    assert account_device_identifier("entry-id", "1") == "entry-id_account1"
+    assert (
+        account_entity_unique_id("entry-id", "1", "gas_used")
+        == "entry-id_account1_gas_used"
     )

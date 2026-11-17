@@ -92,7 +92,7 @@ The integration creates sensors for the latest available billing record:
 | Long Name | Utility long name, e.g. `Georgia Natural Gas` (diagnostic) |
 | Short Name | Short label, e.g. `GNG` (diagnostic) |
 
-Dashboard example: `{{ states('sensor.gng_<address>_short_name') }}` (exact entity id depends on your device name).
+Default entity ids use the portal account selection slug (not street address), e.g. `sensor.gng_account1_short_name`, `sensor.gng_account1_gas_used`. Dashboard example: `{{ states('sensor.gng_account1_short_name') }}`.
 
 **Important:** GNG provides consumption totals for billing periods, not daily meter readings. The **Gas Consumption** Energy sensor therefore estimates daily usage by distributing each bill's actual therm total evenly across its service days. After the latest bill period, it projects the latest daily average through the previous day. These are estimates, not measured daily readings. When a new bill arrives, the integration replaces the estimate for that billing period with a distribution based on the newly reported total.
 

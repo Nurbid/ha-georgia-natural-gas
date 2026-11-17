@@ -27,6 +27,11 @@ from .const import (
     SHORT_NAME,
 )
 from .coordinator import GeorgiaNaturalGasCoordinator
+from .identity import (
+    account_device_identifier,
+    account_device_name,
+    account_entity_unique_id,
+)
 from .models import BillingRecord
 from .price_plan import PricePlanPeriod, latest_period_service_cost
 from .statistics import (
@@ -305,17 +310,22 @@ def _device_info(
     coordinator: GeorgiaNaturalGasCoordinator,
     entry_id: str,
 ) -> DeviceInfo:
-    """Build shared device info for GNG sensors."""
+    """Build per-account device info (stable ids; shareable entity slugs)."""
 
-    device_name = SHORT_NAME
+    account_selection = coordinator.account_selection
+    info: DeviceInfo = {
+        "identifiers": {
+            (DOMAIN, account_device_identifier(entry_id, account_selection))
+        },
+        "name": account_device_name(account_selection),
+        "manufacturer": MANUFACTURER,
+    }
+    # Address/account stay visible on the device card without polluting entity_ids.
     if coordinator.service_address:
-        device_name = f"{device_name} • {coordinator.service_address}"
-
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry_id)},
-        name=device_name,
-        manufacturer=MANUFACTURER,
-    )
+        info["model"] = coordinator.service_address
+    if coordinator.account_number:
+        info["serial_number"] = coordinator.account_number
+    return info
 
 
 class GNGBrandingSensor(SensorEntity):
@@ -335,7 +345,11 @@ class GNGBrandingSensor(SensorEntity):
         """Initialize the branding sensor."""
 
         self.entity_description = description
-        self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_unique_id = account_entity_unique_id(
+            entry_id,
+            coordinator.account_selection,
+            description.key,
+        )
         self._attr_native_value = description.value
         self._attr_device_info = _device_info(coordinator, entry_id)
         self._attr_available = True
@@ -368,7 +382,11 @@ class GNGSensor(
         super().__init__(coordinator)
 
         self.entity_description = description
-        self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_unique_id = account_entity_unique_id(
+            entry_id,
+            coordinator.account_selection,
+            description.key,
+        )
         self._attr_device_info = _device_info(coordinator, entry_id)
 
     @property
