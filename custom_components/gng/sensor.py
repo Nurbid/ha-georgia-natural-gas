@@ -30,6 +30,7 @@ from .coordinator import GeorgiaNaturalGasCoordinator
 from .identity import (
     account_device_identifier,
     account_device_name,
+    account_entity_object_id,
     account_entity_unique_id,
 )
 from .models import BillingRecord
@@ -317,12 +318,13 @@ def _device_info(
         "identifiers": {
             (DOMAIN, account_device_identifier(entry_id, account_selection))
         },
-        "name": account_device_name(account_selection),
+        "name": account_device_name(
+            account_selection, coordinator.service_address or ""
+        ),
         "manufacturer": MANUFACTURER,
     }
-    # Address/account stay visible on the device card without polluting entity_ids.
-    if coordinator.service_address:
-        info["model"] = coordinator.service_address
+    # Account number on the device card; entity_ids stay gng_accountN_* via
+    # suggested_object_id (not derived from this friendly device name).
     if coordinator.account_number:
         info["serial_number"] = coordinator.account_number
     return info
@@ -347,6 +349,10 @@ class GNGBrandingSensor(SensorEntity):
         self.entity_description = description
         self._attr_unique_id = account_entity_unique_id(
             entry_id,
+            coordinator.account_selection,
+            description.key,
+        )
+        self._attr_suggested_object_id = account_entity_object_id(
             coordinator.account_selection,
             description.key,
         )
@@ -384,6 +390,10 @@ class GNGSensor(
         self.entity_description = description
         self._attr_unique_id = account_entity_unique_id(
             entry_id,
+            coordinator.account_selection,
+            description.key,
+        )
+        self._attr_suggested_object_id = account_entity_object_id(
             coordinator.account_selection,
             description.key,
         )

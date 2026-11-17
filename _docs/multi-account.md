@@ -6,8 +6,8 @@ One GNG **login** (config entry) may later expose multiple **service accounts**.
 
 ```
 Config entry (portal username)
-  ├─ Device: GNG account1  → sensors sensor.gng_account1_*
-  └─ Device: GNG account2  → sensors sensor.gng_account2_*
+  ├─ Device: GNG • 123 Some St  → sensors sensor.gng_account1_*
+  └─ Device: GNG • 456 Other St → sensors sensor.gng_account2_*
 ```
 
 - Each service account = its own Home Assistant **device** and sensor set.
@@ -20,12 +20,13 @@ Config entry (portal username)
 | --- | --- | --- |
 | Portal selection | `"1"`, `"2"`, … | `"1"` |
 | Slug | `account{selection}` | `account1` |
-| Device name | `GNG account{selection}` | `GNG account1` |
+| Device name (friendly) | `GNG • {address}` (fallback `GNG account{selection}`) | `GNG • 123 Some Street` |
 | Device identifier | `{entry_id}_account{selection}` | `…_account1` |
 | Entity unique_id | `{entry_id}_account{selection}_{key}` | `…_account1_gas_used` |
+| Suggested object_id | `gng_account{selection}_{key}` | `gng_account1_gas_used` |
 | Default entity_id | `sensor.gng_account{selection}_{key}` | `sensor.gng_account1_gas_used` |
 
-Friendly address / account number go on the device **model** / **serial_number** (and config entry title), not in the entity_id slug.
+Entity ids come from `suggested_object_id`, not from the friendly device name. Account number stays on device **serial_number** (and config entry title).
 
 ## Not implemented yet
 
