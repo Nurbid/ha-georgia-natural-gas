@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfEnergy, UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfEnergy, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -20,6 +20,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
+    INTEGRATION_NAME,
+    LONG_NAME,
     MANUFACTURER,
     PLAN_CAPABILITY_BUDGET_BILLING,
     SHORT_NAME,
@@ -244,6 +246,38 @@ SENSORS: tuple[GNGSensorDescription, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class GNGBrandingSensorDescription(SensorEntityDescription):
+    """Describe a static branding/label sensor for dashboards."""
+
+    value: str
+
+
+BRANDING_SENSORS: tuple[GNGBrandingSensorDescription, ...] = (
+    GNGBrandingSensorDescription(
+        key="integration_name",
+        name="Integration Name",
+        icon="mdi:information-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value=INTEGRATION_NAME,
+    ),
+    GNGBrandingSensorDescription(
+        key="long_name",
+        name="Long Name",
+        icon="mdi:tag-text",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value=LONG_NAME,
+    ),
+    GNGBrandingSensorDescription(
+        key="short_name",
+        name="Short Name",
+        icon="mdi:tag",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value=SHORT_NAME,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -254,9 +288,63 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
 
     async_add_entities(
-        GNGSensor(coordinator, entry.entry_id, description)
-        for description in SENSORS
+        [
+            *(
+                GNGSensor(coordinator, entry.entry_id, description)
+                for description in SENSORS
+            ),
+            *(
+                GNGBrandingSensor(coordinator, entry.entry_id, description)
+                for description in BRANDING_SENSORS
+            ),
+        ]
     )
+
+
+def _device_info(
+    coordinator: GeorgiaNaturalGasCoordinator,
+    entry_id: str,
+) -> DeviceInfo:
+    """Build shared device info for GNG sensors."""
+
+    device_name = SHORT_NAME
+    if coordinator.service_address:
+        device_name = f"{device_name} • {coordinator.service_address}"
+
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry_id)},
+        name=device_name,
+        manufacturer=MANUFACTURER,
+    )
+
+
+class GNGBrandingSensor(SensorEntity):
+    """Static branding strings for custom dashboards."""
+
+    entity_description: GNGBrandingSensorDescription
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+
+    def __init__(
+        self,
+        coordinator: GeorgiaNaturalGasCoordinator,
+        entry_id: str,
+        description: GNGBrandingSensorDescription,
+    ) -> None:
+        """Initialize the branding sensor."""
+
+        self.entity_description = description
+        self._attr_unique_id = f"{entry_id}_{description.key}"
+        self._attr_native_value = description.value
+        self._attr_device_info = _device_info(coordinator, entry_id)
+        self._attr_available = True
+
+    @property
+    def native_value(self) -> str:
+        """Return the fixed branding string."""
+
+        return self.entity_description.value
 
 
 class GNGSensor(
@@ -281,16 +369,7 @@ class GNGSensor(
 
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
-
-        device_name = SHORT_NAME
-        if coordinator.service_address:
-            device_name = f"{device_name} • {coordinator.service_address}"
-
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
-            name=device_name,
-            manufacturer=MANUFACTURER,
-        )
+        self._attr_device_info = _device_info(coordinator, entry_id)
 
     @property
     def available(self) -> bool:
