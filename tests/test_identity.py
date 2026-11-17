@@ -43,10 +43,9 @@ def test_builds_account_label_without_address() -> None:
 
 
 def test_account_selection_slug_and_device_name() -> None:
-    """Selection index drives object_id; address drives friendly device name."""
+    """Selection index drives device name and shareable entity object ids."""
     assert account_selection_slug("1") == "account1"
-    assert account_device_name("1", "123 Some Street") == "GNG • 123 Some Street"
-    assert account_device_name("1") == "GNG account1"
+    assert account_device_name("1") == "GNG Account1"
     assert account_entity_object_id("1", "gas_used") == "gng_account1_gas_used"
     assert account_device_identifier("entry-id", "1") == "entry-id_account1"
     assert (

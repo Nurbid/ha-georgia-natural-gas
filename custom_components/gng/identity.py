@@ -23,13 +23,15 @@ def account_selection_slug(account_selection: str) -> str:
     return f"account{selection}"
 
 
-def account_device_name(account_selection: str, address: str = "") -> str:
-    """Human-readable device name (address preferred; accountN fallback)."""
+def account_device_name(account_selection: str) -> str:
+    """Device name that slugifies to sensor.gng_accountN_* entity ids.
 
-    cleaned = address.strip()
-    if cleaned:
-        return f"{SHORT_NAME} • {cleaned}"
-    return f"{SHORT_NAME} {account_selection_slug(account_selection)}"
+    Use ``GNG Account1`` (capital A) so HA object ids become ``gng_account1_*``.
+    User-editable display names stay in the device registry ``name_by_user``.
+    """
+
+    selection = str(account_selection).strip() or "1"
+    return f"{SHORT_NAME} Account{selection}"
 
 
 def account_entity_object_id(account_selection: str, key: str) -> str:
