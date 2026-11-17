@@ -18,6 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
+from .api import BASE_URL
 from .const import (
     DOMAIN,
     INTEGRATION_NAME,
@@ -318,15 +319,13 @@ def _device_info(
         "identifiers": {
             (DOMAIN, account_device_identifier(entry_id, account_selection))
         },
-        "name": account_device_name(
-            account_selection, coordinator.service_address or ""
-        ),
+        "name": account_device_name(account_selection),
         "manufacturer": MANUFACTURER,
+        "configuration_url": BASE_URL,
     }
-    # Account number on the device card; entity_ids stay gng_accountN_* via
-    # suggested_object_id (not derived from this friendly device name).
-    if coordinator.account_number:
-        info["serial_number"] = coordinator.account_number
+    # Device name stays "GNG AccountN" for stable entity_id slugs. Address /
+    # account number live on the config entry title; optional display rename
+    # is HA name_by_user (pencil), not DeviceInfo.name.
     return info
 
 
