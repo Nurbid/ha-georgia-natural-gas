@@ -4,7 +4,8 @@
 | --- | --- |
 | Integration title (HACS / Add Integration / `manifest.name`) | `Georgia Natural Gas (GNG) - Unofficial` |
 | Domain / package | `gng` (`custom_components/gng/`) |
-| Device name (entity_id slug source) | `GNG account{N}` → `sensor.gng_account{N}_*` |
+| Device name (friendly) | `GNG • {address}` (fallback `GNG account{N}`) |
+| Entity object_id | `gng_account{N}_{key}` → `sensor.gng_account{N}_*` |
 | Device / short display prefix | `GNG` (`SHORT_NAME`) |
 | Full utility name (docs / consts) | `Georgia Natural Gas` (`LONG_NAME`) |
 | Device manufacturer | `Community` (not the utility’s legal name) |

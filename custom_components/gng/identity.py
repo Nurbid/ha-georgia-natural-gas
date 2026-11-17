@@ -23,10 +23,19 @@ def account_selection_slug(account_selection: str) -> str:
     return f"account{selection}"
 
 
-def account_device_name(account_selection: str) -> str:
-    """Device name that slugs to sensor.gng_accountN_* entity ids."""
+def account_device_name(account_selection: str, address: str = "") -> str:
+    """Human-readable device name (address preferred; accountN fallback)."""
 
+    cleaned = address.strip()
+    if cleaned:
+        return f"{SHORT_NAME} • {cleaned}"
     return f"{SHORT_NAME} {account_selection_slug(account_selection)}"
+
+
+def account_entity_object_id(account_selection: str, key: str) -> str:
+    """Suggested entity object_id → sensor.gng_accountN_{key}."""
+
+    return f"{SHORT_NAME.lower()}_{account_selection_slug(account_selection)}_{key}"
 
 
 def account_device_identifier(entry_id: str, account_selection: str) -> str:
