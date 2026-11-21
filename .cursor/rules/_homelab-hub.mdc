@@ -9,3 +9,6 @@ Before NAS / Docker / Home Assistant host / network changes, read sibling `../_h
 
 Never write `/config/.storage/`. Secrets stay in each project's gitignored `.env`.
 
+New problem / “make a project”: follow `_homelab-hub` project-intake — scan siblings, propose reuse vs new slug, wait for confirmation before creating repos or deep fixes. See `_homelab-hub/HANDOFF.md` and `_homelab-hub/rules/homelab-shared.mdc`.
+
+
