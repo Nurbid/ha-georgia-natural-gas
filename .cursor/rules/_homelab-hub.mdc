@@ -1,0 +1,11 @@
+---
+description: Point agents at shared _homelab-hub for topology and access
+alwaysApply: true
+---
+
+# Homelab shared docs
+
+Before NAS / Docker / Home Assistant host / network changes, read sibling `../_homelab-hub` (access matrix, storage-safety, Synology, topology).
+
+Never write `/config/.storage/`. Secrets stay in each project's gitignored `.env`.
+
