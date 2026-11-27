@@ -1,5 +1,7 @@
 # Georgia Natural Gas (GNG) - Unofficial
 
+[![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Nurbid&repository=ha-georgia-natural-gas&category=integration)
+
 A custom [Home Assistant](https://www.home-assistant.io/) integration for customers of **Georgia Natural Gas (GNG)**. It retrieves billing history from the GNG customer portal and exposes usage and cost figures as Home Assistant sensors for the Energy dashboard.
 
 **Requirements:** Home Assistant Core 2026.11.0 or newer.
@@ -29,19 +31,15 @@ If you need official account support, contact GNG — not the maintainers of thi
 
 ## Installation
 
-### HACS
+### Marketplace / HACS
 
-1. Open **HACS** in Home Assistant.
-2. Open the three-dot menu and select **Custom repositories**.
-3. Add this repository URL:
+Use the badge above, or add this repository as a custom repository in **Settings > Marketplace** (Home Assistant 2026.11+) or in HACS on older versions:
 
-   `https://github.com/Nurbid/ha-georgia-natural-gas`
+`https://github.com/Nurbid/ha-georgia-natural-gas`
 
-4. Select **Integration** as the category and add the repository.
-5. Find **Georgia Natural Gas (GNG) - Unofficial** in HACS and download it.
-6. Restart Home Assistant.
-7. Go to **Settings → Devices & services → Add integration**.
-8. Search for **Georgia Natural Gas (GNG) - Unofficial** and enter your GNG portal username and password.
+Category: **Integration**.
+
+After install, restart Home Assistant if prompted. Then go to **Settings → Devices & services → Add integration**, search for **Georgia Natural Gas (GNG) - Unofficial**, and enter your GNG portal username and password.
 
 ### Manual
 
